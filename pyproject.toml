@@ -1,0 +1,14 @@
+[project]
+name='k-calibrate'
+description='Calibrate!'
+version='0.0.0'
+authors=[
+    { name = 'Carter Fendley' }
+]
+
+[project.optional-dependencies]
+dev = [
+    "tox",
+    "pytest",
+    "pytest-cov"
+]
