@@ -1,0 +1,16 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 5s
+samplers:
+  - kind: K8BasicStats
+    args:
+      namespace: default
+  - kind: NRBasicStats
+    args:
+      cluster_name: local
+      namespace: default
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 15

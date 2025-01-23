@@ -1,0 +1,6 @@
+schedule:
+  kind: ReferencedIntervalSchedule
+  args: {}
+samplers:
+  - kind: ThisSamplerDoesNotExist
+    args: {}

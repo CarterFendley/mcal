@@ -1,0 +1,9 @@
+schedule:
+  kind: ReferencedIntervalSchedule
+  args:
+    reference_time: midnight
+    interval: 15s
+  samplers:
+    - kind: TestSample
+      args:
+        namespace: lol

@@ -1,3 +1,10 @@
+# [CUSTOM]
+# -----
+env.toml
+kc_run_data/
+# -----
+# [END CUSTOM]
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

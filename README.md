@@ -6,14 +6,44 @@ conda activate k-calibrate
 ```
 
 ```bash
+# Editable install
+python -m pip install -e .
+# Dev dependencies
 python -m pip install -e '.[dev]'
+# Docs dependencies
+python -m pip install -e '.[docs]'
+# All dependencies
+pip install -e '.[all]'
 ```
 
 ## Running tests
 
 ```bash 
-coverage erase && python -m pytest --cov clean_tree
+coverage erase && python -m pytest --cov k_calibrate
+coverage erase && python -m pytest --cov k_calibrate --slow # With slow tests
+
+# Note: Tox will run slow tests
 tox -e cov_clean,py312
+```
+
+### Kubernetes
+
+The following instructions are for creating a [kind cluster](https://kind.sigs.k8s.io/)
+
+```
+kind create cluster
+```
+
+Bootstrap newrelic integration into the cluster (based on instructions [here](https://docs.newrelic.com/install/kubernetes)).
+
+```
+kc dev nr-bootstrap
+```
+
+List clusters connected to NR
+
+```
+kc dev list-clusters
 ```
 
 ### Releasing
@@ -42,3 +72,7 @@ git push -f --tags
 ```
 
 Delete previous github release and re-create.
+
+# TODO:
+- Pixie?
+- Prometheus 

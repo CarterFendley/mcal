@@ -1,0 +1,4 @@
+schedule:
+  kind: ReferencedIntervalSchedule
+samplers:
+  - kind: _DummySampler

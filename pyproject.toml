@@ -6,9 +6,36 @@ authors=[
     { name = 'Carter Fendley' }
 ]
 
+dependencies = [
+    "kubernetes",
+    "click",
+    "oyaml",
+    "jinja2",
+    "pydantic",
+    "toml",
+    "timedelta", # Built in timedelta sucks
+    "pandas",
+    "gql[all]"
+]
+
+[tool.setuptools]
+packages = ["k_calibrate"]
+
+[project.entry-points."k_calibrate.samplers"]
+samplers = "k_calibrate.samplers:SAMPLERS"
+
+[project.scripts]
+kc = "k_calibrate.cli.main:kc"
+
 [project.optional-dependencies]
 dev = [
+    "pre-commit",
     "tox",
     "pytest",
-    "pytest-cov"
+    "pytest-cov",
+    "pytest-benchmark"
 ]
+docs = [
+    "mkdocs"
+]
+all = ["k-calibrate[dev, docs]"]

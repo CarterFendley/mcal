@@ -1,0 +1,7 @@
+schedule:
+  kind: ReferencedIntervalSchedule
+  args: {}
+samplers:
+  - kind: _DummySampler
+    args:
+      time: {{time}}

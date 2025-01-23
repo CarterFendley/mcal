@@ -1,0 +1,6 @@
+site_name: k-calibrate
+nav:
+  - New Relic: new_relic.md
+  - Writeups:
+    - New Relic Integration: writeups/new_relic_integration.md
+theme: readthedocs
