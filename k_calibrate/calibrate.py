@@ -133,6 +133,10 @@ class IntervalSchedule(Schedule):
         self._last_time = utc_now()
 
 class ReferencedIntervalSchedule(Schedule):
+    @classmethod
+    def from_config(cls):
+        raise NotImplementedError("Not yet implemented")
+
     def __init__(
         self,
         interval: timedelta,

@@ -5,11 +5,13 @@ from k_calibrate.utils.logging import get_logger, set_cli_level
 
 def test_basic(caplog):
     logger = get_logger(__name__)
-    with caplog.at_level(logging.DEBUG):
-        logger.error("Error")
-        logger.warning("Warning")
-        logger.info("Info")
-        logger.debug("Debug")
+    logger.setLevel(logging.DEBUG) # NOTE: That caplog.with_level(...) will NOT with this implementation
+    # TODO: Should I make it?
+
+    logger.error("Error")
+    logger.warning("Warning")
+    logger.info("Info")
+    logger.debug("Debug")
 
     # NOTE: Honestly not sure how useful these assertions are
     assert caplog.record_tuples == [

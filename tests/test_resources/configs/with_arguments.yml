@@ -5,3 +5,7 @@ samplers:
   - kind: _DummySampler
     args:
       time: {{time}}
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 15
