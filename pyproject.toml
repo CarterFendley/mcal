@@ -18,8 +18,8 @@ dependencies = [
     "gql[all]"
 ]
 
-[tool.setuptools]
-packages = ["k_calibrate"]
+[tool.setuptools.packages.find]
+include = ["k_calibrate*"]
 
 [project.entry-points."k_calibrate.samplers"]
 samplers = "k_calibrate.samplers:SAMPLERS"
