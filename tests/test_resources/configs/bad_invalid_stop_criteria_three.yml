@@ -1,0 +1,6 @@
+schedule:
+  kind: ReferencedIntervalSchedule
+samplers:
+  - kind: _DummySampler
+stop_criteria:
+  kind: 'k_calibrate:object_does_not_exist'
