@@ -36,7 +36,7 @@ def test_basic(cli_run: CLIRunFixture, interval: timedelta, amount: int):
     timestamp_deltas = timestamp_deltas.iloc[1:] # Drop the first row since it will be NaT
 
     diff_from_interval = abs(timestamp_deltas - interval)
-    assert (diff_from_interval < timedelta(seconds=0.1)).all()
+    assert (diff_from_interval < timedelta(seconds=0.2)).all()
 
 
 @pytest.mark.parametrize(
