@@ -1,6 +1,6 @@
-from k_calibrate.calibrate import Sampler
+from k_calibrate.calibrate import Sample, Sampler
 
 
 class _DummySampler(Sampler):
     def sample(self):
-        return None
+        return Sample(data_points={})

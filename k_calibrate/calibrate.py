@@ -114,7 +114,7 @@ class IntervalSchedule(Schedule):
         self._last_time: datetime = None
 
         if self.interval.total_seconds() < 0:
-            logger.error("Specified interval is negative")
+            logger.error("Specified interval is negative.")
             raise NotImplementedError("Schedule not implemented for negative intervals")
 
     def sleep(self):
@@ -149,7 +149,7 @@ class ReferencedIntervalSchedule(Schedule):
 
         if not disable_checks:
             if self.interval.total_seconds() < 0:
-                logger.error("Specified interval is negative")
+                logger.error("Specified interval is negative.")
                 raise NotImplementedError("Schedule not implemented for negative intervals")
 
         self._last_target: Optional[datetime] = None

@@ -1,10 +1,10 @@
 schedule:
-  kind: ThisScheduleDoesNotExist
-  args: {}
+  kind: IntervalSchedule
+  args:
+    interval: {{interval}}
 samplers:
   - kind: _DummySampler
-    args: {}
 stop_criteria:
   kind: 'builtin:after_iterations'
   args:
-    amount: 15
+    amount: {{amount}}

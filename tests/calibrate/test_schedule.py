@@ -9,10 +9,6 @@ import k_calibrate.calibrate
 from k_calibrate.calibrate import DETAILED_FORMAT, ReferencedIntervalSchedule
 from k_calibrate.utils.time import utc_now
 
-# def make_loop(delay: float)
-
-
-
 logger_name = k_calibrate.calibrate.__name__
 
 def assert_within(

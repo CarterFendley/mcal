@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Optional
 
 import pandas as pd
 
+from k_calibrate.calibrate import Sample
 from k_calibrate.config import KCConfig
 from k_calibrate.saves import SampleRun
 from k_calibrate.utils.logging import get_logger
@@ -22,7 +24,14 @@ class RunStats:
             f"Time elapsed: {self.time_elapsed}",
         ))
 
-def run(config: KCConfig):
+# TODO:
+#   1. This should return RunData!
+#   2. It should not write the data, that should happen in the CLI
+def run(
+    config: KCConfig,
+    name: Optional[str] = None,
+    save_directory: Optional[str] = None
+):
     schedule, samplers, stop_criteria = config.create()
 
     # Go ahead and allocate run data
@@ -30,8 +39,10 @@ def run(config: KCConfig):
         start_time=utc_now(),
         config=config
     )
-    for name in samplers.keys():
-        run_data.sample_data[name] = pd.DataFrame()
+    for sampler_name in samplers.keys():
+        df = pd.DataFrame()
+        df.index.name = 'iteration'
+        run_data.sample_data[sampler_name] = df
 
     # TODO:
     # 1. Multiple samplers in different threads / processes
@@ -40,17 +51,19 @@ def run(config: KCConfig):
     while not stop_criteria(stats):
         schedule.sleep()
         logger.info("Iteration: %s", stats.iterations + 1)
-        for name, sampler in samplers.items():
+        for sampler_name, sampler in samplers.items():
             sample_time = utc_now()
             sample = sampler.sample()
+
+            assert isinstance(sample, Sample), "Sampler '%s' returned value which is not an instance of 'Sample': %s" % (sampler.__class__.__name__, sample)
 
             if sample.timestamp is None:
                 sample.timestamp = sample_time
 
             # Store new row
-            run_data.sample_data[name] = pd.concat(
+            run_data.sample_data[sampler_name] = pd.concat(
                 [
-                    run_data.sample_data[name],
+                    run_data.sample_data[sampler_name],
                     pd.DataFrame(sample.as_pandas_row()),
                 ],
                 ignore_index=True # Not 100% on this
@@ -61,5 +74,8 @@ def run(config: KCConfig):
 
     logger.info("Run ended successfully:\n%s" % stats.get_str())
 
-    save_path = run_data.write_run()
+    save_path = run_data.write_run(
+        name=name,
+        save_directory=save_directory
+    )
     logger.info("Wrote run data to path: %s" % save_path)

@@ -1,3 +1,4 @@
+from test_resources.cli_fixtures import *
 from test_resources.fixtures import *
 
 

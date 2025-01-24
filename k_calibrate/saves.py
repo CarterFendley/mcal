@@ -7,6 +7,7 @@ import pandas as pd
 
 from k_calibrate.config import KCConfig, load_config_file
 from k_calibrate.utils.logging import get_logger
+from k_calibrate.utils.pandas import load_dtypes, save_dtypes
 
 # NOTE: I think it is important that %Z is included to assure UTC
 DATE_FORMAT = "%Y-%m-%d_%H:%M:%S_%Z"
@@ -24,13 +25,16 @@ class SampleRun:
 
     def write_run(
         self,
+        save_directory: Optional[str] = None,
         name: Optional[str] = None,
         data_type: str = 'csv'
     ) -> str:
+        if save_directory is None:
+            save_directory = 'kc_run_data'
         if name is None:
             name = self.gen_name()
 
-        folder_path = os.path.join('kc_run_data', name)
+        folder_path = os.path.join(save_directory, name)
         if os.path.exists(folder_path):
             # TODO: Remove this, really bad to error if run has data
             raise RuntimeError("Write path already exists: %s", folder_path)
@@ -44,7 +48,9 @@ class SampleRun:
         for sample_name, sample in self.sample_data.items():
             if data_type == 'csv':
                 path = os.path.join(folder_path, sample_name + ".csv")
+                dtypes_path = os.path.join(folder_path, sample_name + '_dtypes.json')
                 sample.to_csv(path, header=True)
+                save_dtypes(dtypes_path, sample)
             else:
                 raise NotImplementedError("Run saving not implemented for type: %s" % data_type)
 
@@ -62,13 +68,26 @@ def load_run(path: str) -> SampleRun:
     for file in os.listdir(path):
         file_path = os.path.join(path, file)
         if file == "config.yml":
-            config = load_config_file(file_path)
+            # NOTE: Config file should be fully rendered when saved
+            config = load_config_file(file_path, {})
             continue
 
         name, ext = os.path.splitext(file)
 
-        if ext == "csv":
-            sample_data[name] = pd.read_csv(file_path)
+        if ext == ".json":
+            # Used for saving CSV dtypes so just skipping here
+            continue
+        if ext == ".csv":
+            dtypes_path = os.path.join(path, name + "_dtypes.json")
+            if not os.path.isfile(dtypes_path):
+                logger.error("Found csv file '%s' but no accompanying dtypes file at path: %s" % (file, dtypes_path))
+                raise RuntimeError("Found CSV file but no dtypes file, is your data corrupted.")
+            dtypes_dict, parse_dates = load_dtypes(dtypes_path)
+            sample_data[name] = pd.read_csv(
+                file_path,
+                dtype=dtypes_dict,
+                parse_dates=parse_dates
+            )
         else:
             raise NotImplementedError("Found unexpected type in save folder: %s" % ext)
 

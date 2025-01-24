@@ -5,5 +5,6 @@ repos:
   rev: 5.13.2
   hooks:
     - id: isort
-      args: [--diff, --check-only]
+      # --split-on-trailing-comma: Split imports list followed by a trailing comma into VERTICAL_HANGING_INDENT mode. This follows Black style magic comma. (Honestly would like to stop them from even trying to force tuple imports onto the sample line... silly)
+      args: [--check-only, --diff, --split-on-trailing-comma]
       name: isort (python)

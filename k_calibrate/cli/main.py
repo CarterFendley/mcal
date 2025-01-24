@@ -1,6 +1,6 @@
-import re
 import sys
 from datetime import datetime
+from typing import Optional
 
 import click
 
@@ -13,6 +13,8 @@ from k_calibrate.new_relic import client_from_env_file
 from k_calibrate.utils.cmd import is_cmd, run_cmd
 from k_calibrate.utils.env_file import load_env_file
 from k_calibrate.utils.logging import get_logger, set_cli_level
+
+from .util import parse_extra_kwargs
 
 logger = get_logger(__name__, cli=True)
 
@@ -50,15 +52,7 @@ def run(ctx, name: str):
         logger.error("Unable to find sampler with name: '%s'" % name)
         sys.exit(1)
 
-    kwargs = {}
-    for kv_pair in ctx.args:
-        if not re.match(r"--[^=]+=[^=]+", kv_pair):
-            logger.error("Extra arg provided which does not follow '--key=value' pattern: '%s'" % kv_pair)
-            sys.exit(1)
-
-        # TODO: Type comparison / conversion to needed type?
-        key, value = kv_pair[2:].split('=')
-        kwargs[key] = value
+    kwargs = parse_extra_kwargs(ctx)
 
     logger.debug("Parsed kwargs from user: %s", kwargs)
 
@@ -74,11 +68,27 @@ def run(ctx, name: str):
     else:
         print(sample.data_points)
 
-@kc.command
+@kc.command(context_settings={
+    'ignore_unknown_options': True,
+    'allow_extra_args': True,
+})
+@click.pass_context
 @click.argument('config_path')
-def run(config_path: str):
-    config = load_config_file(config_path, arguments={})
-    orchestrate.run(config)
+@click.option('--save-name', help="Name to save the run as in the save folder.")
+@click.option('--save-directory', help="Directory to save the run in.")
+def run(
+    ctx,
+    config_path: str,
+    save_name: Optional[str] = None,
+    save_directory: Optional[str] = None
+):
+    arguments = parse_extra_kwargs(ctx)
+    config = load_config_file(config_path, arguments=arguments)
+    orchestrate.run(
+        config,
+        name=save_name,
+        save_directory=save_directory
+    )
 
 @kc.group
 def dev():
