@@ -49,9 +49,19 @@ def test_parameters_checks(caplog):
         )
     assert (logger_name, logging.WARNING, "Reference timestamp is greater than one hour old.") in caplog.record_tuples
 
-def test_basic():
+@pytest.mark.parametrize(
+    "interval",
+    [
+        pytest.param(
+            timedelta(seconds=0.1),
+            marks=pytest.mark.xfail(reason="MacOS GitHub runners have issues meeting this timing")
+        ),
+        timedelta(seconds=0.2)
+    ]
+)
+def test_basic(interval: timedelta):
     schedule = ReferencedIntervalSchedule(
-        interval=timedelta(seconds=0.1),
+        interval=interval,
         reference_time=utc_now()
     )
 
