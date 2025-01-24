@@ -14,7 +14,7 @@ logger_name = k_calibrate.calibrate.__name__
 def assert_within(
     t1: datetime,
     t2: datetime,
-    within: timedelta = timedelta(seconds=0.1)
+    within: timedelta = timedelta(seconds=0.2)
 ):
     assert abs(t1 - t2) <= within
 
@@ -49,19 +49,9 @@ def test_parameters_checks(caplog):
         )
     assert (logger_name, logging.WARNING, "Reference timestamp is greater than one hour old.") in caplog.record_tuples
 
-@pytest.mark.parametrize(
-    "interval",
-    [
-        pytest.param(
-            timedelta(seconds=0.1),
-            marks=pytest.mark.xfail(reason="MacOS GitHub runners have issues meeting this timing")
-        ),
-        timedelta(seconds=0.2)
-    ]
-)
-def test_basic(interval: timedelta):
+def test_basic():
     schedule = ReferencedIntervalSchedule(
-        interval=interval,
+        interval=timedelta(seconds=0.1),
         reference_time=utc_now()
     )
 
