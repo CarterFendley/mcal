@@ -19,8 +19,8 @@ pip install -e '.[all]'
 ## Running tests
 
 ```bash 
-coverage erase && python -m pytest --cov k_calibrate
-coverage erase && python -m pytest --cov k_calibrate --slow # With slow tests
+python -m pytest --cov k_calibrate
+python -m pytest --cov k_calibrate --slow # With slow tests
 
 # Note: Tox will run slow tests
 tox -e cov_clean,py312
