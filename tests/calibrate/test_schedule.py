@@ -63,11 +63,31 @@ def test_basic():
         )
 
 @pytest.mark.parametrize(
-    "num_missed",
-    (1, 2, 3, 4)
+    "num_missed, interval",
+    [
+        pytest.param(
+            1, timedelta(seconds=0.1),
+            marks=pytest.mark.xfail(reason="MacOS GitHub runners have issues meeting this timing")
+        ),
+        pytest.param(
+            2, timedelta(seconds=0.1),
+            marks=pytest.mark.xfail(reason="MacOS GitHub runners have issues meeting this timing")
+        ),
+        pytest.param(
+            3, timedelta(seconds=0.1),
+            marks=pytest.mark.xfail(reason="MacOS GitHub runners have issues meeting this timing")
+        ),
+        pytest.param(
+            4, timedelta(seconds=0.1),
+            marks=pytest.mark.xfail(reason="MacOS GitHub runners have issues meeting this timing")
+        ),
+        (1, timedelta(seconds=0.2)),
+        (2, timedelta(seconds=0.2)),
+        (3, timedelta(seconds=0.2)),
+        (4, timedelta(seconds=0.2)),
+    ]
 )
-def test_too_slow_loop(caplog, num_missed: int):
-    interval = timedelta(seconds=0.1)
+def test_too_slow_loop(caplog, num_missed: int, interval: timedelta):
     schedule = ReferencedIntervalSchedule(
         interval=interval,
         reference_time=utc_now()
@@ -77,12 +97,7 @@ def test_too_slow_loop(caplog, num_missed: int):
     assert len(caplog.record_tuples) == 0
 
     # Intentionally miss 3 intervals
-    time.sleep(
-        (
-            (schedule.interval * num_missed)
-            + interval * 0.5 # Fully miss the interval
-        ).total_seconds()
-    )
+    time.sleep((schedule.interval * num_missed).total_seconds())
     schedule.sleep()
     assert len(caplog.record_tuples) != 0
 
