@@ -67,8 +67,9 @@ def test_basic():
     (1, 2, 3, 4)
 )
 def test_too_slow_loop(caplog, num_missed: int):
+    interval = timedelta(seconds=0.1)
     schedule = ReferencedIntervalSchedule(
-        interval=timedelta(seconds=0.1),
+        interval=interval,
         reference_time=utc_now()
     )
 
@@ -76,7 +77,12 @@ def test_too_slow_loop(caplog, num_missed: int):
     assert len(caplog.record_tuples) == 0
 
     # Intentionally miss 3 intervals
-    time.sleep((schedule.interval * num_missed).total_seconds())
+    time.sleep(
+        (
+            (schedule.interval * num_missed)
+            + interval * 0.5 # Fully miss the interval
+        ).total_seconds()
+    )
     schedule.sleep()
     assert len(caplog.record_tuples) != 0
 
