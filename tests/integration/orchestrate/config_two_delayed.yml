@@ -1,0 +1,17 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: {{interval}}
+samplers:
+  - kind: _DummySampler
+    name: dummy_one
+    args:
+      delay: {{delay}}
+  - kind: _DummySampler
+    name: dummy_two
+    args:
+      delay: {{delay}}
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: {{amount}}

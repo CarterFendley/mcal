@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from typing import Optional
 
@@ -82,8 +83,11 @@ def run(
 ):
     arguments = parse_extra_kwargs(ctx)
     config = load_config_file(config_path, arguments=arguments)
-    orchestrate.run(
-        config,
+
+    run_data = asyncio.run(orchestrate.run(config))
+
+    save_path = run_data.write_run(
         name=save_name,
-        save_directory=save_directory
+        save_directory=save_directory,
     )
+    logger.info("Wrote run data to path: %s" % save_path)

@@ -17,4 +17,4 @@ def test_after_iterations(cli_run: CLIRunFixture, amount: int):
     )
 
     assert data is not None
-    assert data.sample_data["_DummySampler"].shape == (amount, 2)
+    assert data.collected_data["_DummySampler"].shape == (amount, 2)

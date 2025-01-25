@@ -28,7 +28,7 @@ def test_basic(cli_run: CLIRunFixture, interval: timedelta, amount: int):
     )
 
     assert data is not None
-    sample_data = data.sample_data
+    sample_data = data.collected_data
 
     # Should have 2 columns 5 rows
     assert sample_data['_DummySampler'].shape == (amount, 2)

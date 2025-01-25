@@ -23,12 +23,19 @@ class KindArgs(BaseModel):
     args: Optional[Dict[str, Any]] = Field(default_factory=lambda: {})
 
 class SamplerConfig(KindArgs):
+    name: Optional[str] = None
+
     @model_validator(mode='after')
     def check_sampler_config(self) -> SamplerConfig:
         if not is_sampler(self.kind):
             raise ValueError("Specified sampler does not exist: %s" % self.kind)
 
         return self
+
+    def get_name(self) -> str:
+        if self.name is not None:
+            return self.name
+        return self.kind
 
 class ScheduleConfig(KindArgs):
     @model_validator(mode='after')
@@ -74,7 +81,6 @@ class KCConfig(BaseModel):
             raise ValueError("Module '%s' has no attribute '%s'" % (module_path, obj_name))
         obj = getattr(module, obj_name)
 
-
         if len(self.stop_criteria.args) != 0:
             # TODO: More validation
             # 1. Look at signature? (for params / stats validation)
@@ -87,6 +93,13 @@ class KCConfig(BaseModel):
                 raise ValueError("Failed to construct criteria function given supplied args.") from err 
 
         self._stop_criteria = obj
+
+        # Validate sampler names are unique
+        names = set()
+        for sampler in self.samplers:
+            if sampler.get_name() in names:
+                raise ValueError(f"Found duplicate sampler name: {sampler.get_name()}")
+            names.add(sampler.get_name())
 
         return self
 
@@ -117,7 +130,7 @@ class KCConfig(BaseModel):
                 sampler = sampler_cls(
                     **sampler_config.args
                 )
-                samplers[sampler_cls.__name__] = sampler
+                samplers[sampler_config.get_name()] = sampler
             except Exception as err:
                 logger.error("Failed to construct sampler '%s' with arguments: %s" % (sampler_config.kind, sampler_config.args))
                 logger.error("Please make sure the arguments are correct and initialization logic.")

@@ -5,10 +5,10 @@ from typing import Any, Dict, Optional, Protocol, Tuple, TypeAlias
 
 import pytest
 
-from k_calibrate.saves import SampleRun, load_run
+from k_calibrate.orchestrate import CalibrationRun, load_run
 from k_calibrate.utils.cmd import run_cmd
 
-CLIRunResult: TypeAlias = Tuple[CompletedProcess, Optional[SampleRun]]
+CLIRunResult: TypeAlias = Tuple[CompletedProcess, Optional[CalibrationRun]]
 class CLIRunFixture(Protocol):
     def __call__(
         self,
