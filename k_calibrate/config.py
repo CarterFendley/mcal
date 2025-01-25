@@ -45,55 +45,73 @@ class ScheduleConfig(KindArgs):
 
         return self
 
-class KCConfig(BaseModel): 
-    model_config = ConfigDict(extra="forbid")
+class FunctionAsKind(KindArgs):
+    _callable: Callable = None
 
-    schedule: ScheduleConfig
-    samplers: List[SamplerConfig]
-    stop_criteria: KindArgs
-
-    _schedule: Schedule = None
-    _samplers: Dict[str, Sampler] = None
-    _stop_criteria: Callable = None
-
-
-    @model_validator(mode='after')
-    def check_model(self) -> KCConfig:
-        # Validate stop_criteria
+    def create_callable(self, builtin_module: str):
         try:
-            module_path, obj_name= self.stop_criteria.kind.split(":")
+            module_path, obj_name= self.kind.split(":")
 
             if module_path == 'builtin':
-                module_path = 'k_calibrate.criteria'
+                module_path = builtin_module
 
             assert module_path != ''
             assert obj_name != ''
         except Exception as err:
-            raise ValueError("Failed to treat stop_criteria as 'module.path:obj' string") from err
+            raise ValueError("Failed to treat 'kind' as 'module.path:obj' string") from err
 
         try:
             module = importlib.import_module(module_path)
         except Exception as err:
             # TODO: Pydantic doesn't report the `from err` part, so errors like import issues are obscured
-            raise ValueError("Failed to load module specified by 'stop_criteria': %s" % (module_path)) from err
+            raise ValueError("Failed to load module specified by 'kind': %s" % (module_path)) from err
 
         if not hasattr(module, obj_name):
             raise ValueError("Module '%s' has no attribute '%s'" % (module_path, obj_name))
         obj = getattr(module, obj_name)
 
-        if len(self.stop_criteria.args) != 0:
+        if len(self.args) != 0:
             # TODO: More validation
             # 1. Look at signature? (for params / stats validation)
             # 2. Make abstract class?
             try:
-                obj = obj(**self.stop_criteria.args)
+                obj = obj(**self.args)
             except Exception as err:
-                logger.error("Failed to construct stop criteria function, args were supplied indicating that '%s' should be curried. Are the correct arguments passed" % obj_name)
+                logger.error("Failed to construct stop criteria function, args were supplied indicating that '%s' should be curried. Are the correct arguments passed: %s" % (obj_name, self.args))
+                logger.error("Exception raised: %s" % err)
 
                 raise ValueError("Failed to construct criteria function given supplied args.") from err 
 
-        self._stop_criteria = obj
+        self._callable = obj
 
+class StopCriteriaConfig(FunctionAsKind):
+    @model_validator(mode='after')
+    def check_function_as_kind(self) -> StopCriteriaConfig:
+        # Validate stop_criteria
+        self.create_callable('k_calibrate.criteria')
+        return self
+
+class ActionConfig(FunctionAsKind):
+    @model_validator(mode='after')
+    def check_function_as_kind(self) -> ActionConfig:
+        # Validate action
+        self.create_callable('k_calibrate.actions')
+        return self
+
+class KCConfig(BaseModel): 
+    model_config = ConfigDict(extra="forbid")
+
+    schedule: ScheduleConfig
+    samplers: List[SamplerConfig]
+    stop_criteria: StopCriteriaConfig
+    actions: List[ActionConfig] = Field(default_factory=lambda: [])
+
+    _schedule: Schedule = None
+    _samplers: Dict[str, Sampler] = None
+
+
+    @model_validator(mode='after')
+    def check_model(self) -> KCConfig:
         # Validate sampler names are unique
         names = set()
         for sampler in self.samplers:
@@ -113,11 +131,16 @@ class KCConfig(BaseModel):
         with open(path, 'w') as f:
             yaml.dump(data, f)
 
-    def create(self) -> Tuple[Schedule, Dict[str, Sampler], Callable]:
+    def create(self) -> Tuple[Schedule, Dict[str, Sampler], List[Callable], Callable]:
         if self._schedule is not None or self._samplers is not None:
             assert self._schedule is not None and self._samplers is not None, "Schedule or sampler has been constructed but not both. This should not happen."
 
-            return self._schedule, self._samplers
+            return (
+                self._schedule,
+                self._samplers,
+                list(map(lambda x: x._callable, self.actions)),
+                self.stop_criteria._callable
+            )
 
         # NOTE: Here we are constructing samplers first, bc schedule constructors may be permitted to use samplers to measure parameters for use in schedule. Note how samplers are passed into schedule construction.
         samplers = {}
@@ -163,8 +186,13 @@ class KCConfig(BaseModel):
         # If everything works, save constructions and return
         self._schedule = schedule
         self._samplers = samplers
-        return schedule, samplers, self._stop_criteria
 
+        return (
+            schedule,
+            samplers,
+            list(map(lambda x: x._callable, self.actions)),
+            self.stop_criteria._callable
+        )
 
 def load_config_file(path: str, arguments: Dict[str, Any]) -> KCConfig:
     assert os.path.isfile(path), "Config path is not a file: %s" % path

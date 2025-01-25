@@ -137,7 +137,7 @@ async def _run_sampler(name: str, sampler: Sampler) -> Tuple[str, Sample]:
 async def run(
     config: KCConfig,
 ) -> CalibrationRun:
-    schedule, samplers, stop_criteria = config.create()
+    schedule, samplers, actions, stop_criteria = config.create()
 
     # Create run data object and allocate dataframes
     run_data = CalibrationRun(
@@ -170,6 +170,15 @@ async def run(
                 ],
                 ignore_index=True, # Don't 100% understand this param
             )
+
+        # Run all actions
+        loop = asyncio.get_running_loop()
+        tasks = [
+            loop.run_in_executor(None, action, stats) for action in actions
+        ]
+        # Wait for actions to complete
+        await asyncio.gather(*tasks)
+
 
         stats.iterations += 1
         stats.time_elapsed = utc_now() - run_data.start_time

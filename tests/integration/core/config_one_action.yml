@@ -1,0 +1,16 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: {{interval}}
+samplers:
+  - kind: _DummyFileCount
+    args:
+      directory: {{directory}}
+actions:
+  - kind: 'builtin:_dummy_file_create'
+    args:
+      directory: {{directory}}
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: {{amount}}

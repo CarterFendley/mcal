@@ -1,4 +1,4 @@
-# Build in criteria
+# Built in criteria
 from k_calibrate.orchestrate import RunStats
 
 

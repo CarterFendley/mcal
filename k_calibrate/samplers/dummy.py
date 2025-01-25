@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Optional
 
@@ -13,3 +14,12 @@ class _DummySampler(Sampler):
             time.sleep(self.delay)
 
         return Sample(data_points={})
+
+class _DummyFileCount(Sampler):
+    def __init__(self, directory: str):
+        self.directory = directory
+
+    def sample(self) -> Sample:
+        return Sample(data_points={
+            'file_count': len(os.listdir(self.directory))
+        })
