@@ -7,8 +7,9 @@ from datetime import datetime, timedelta, timezone
 from importlib.metadata import entry_points
 from itertools import compress
 from math import ceil
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
+import pandas as pd
 from timedelta import Timedelta
 
 from k_calibrate.utils.logging import get_logger
@@ -18,28 +19,12 @@ logger = get_logger(__name__)
 
 DETAILED_FORMAT = '%m/%d/%y %H:%M:%S.%f'
 
-
-@dataclass
-class Sample:
-    data_points: Dict[str, Any]
-    timestamp: datetime = None
-
-    def as_pandas_row(self) -> Dict[str, Any]:
-        # Pandas doesn't like scalars
-        for value in self.data_points.values():
-            # TODO: This is limiting
-            assert not hasattr(value, '__len__'), "Only return scalars from sample functions."
-
-        row = {k:[v] for k, v in self.data_points.items()}
-        row['timestamp'] = [self.timestamp]
-        return row
-
 class Sampler(ABC):
     def __init__(self):
         pass
 
     @abstractmethod
-    def sample(self) -> Sample:
+    def sample(self) -> Union[pd.Series, pd.DataFrame]:
         pass
 
 _LOADED_SAMPLERS: Optional[Dict[str, Sampler]] = None

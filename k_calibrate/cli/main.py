@@ -3,16 +3,17 @@ import sys
 from typing import Optional
 
 import click
+import pandas as pd
 
 from k_calibrate import orchestrate
 from k_calibrate.calibrate import (
-    Sample,
     _load_samplers,
     get_sampler,
 )
 from k_calibrate.config import load_config_file
 from k_calibrate.utils.logging import get_logger, set_cli_level
 
+from .dev import dev
 from .util import parse_extra_kwargs
 
 logger = get_logger(__name__, cli=True)
@@ -27,6 +28,8 @@ def kc(verbose: int):
             "k_calibrate.orchestrate"
         ]
     )
+
+kc.add_command(dev)
 
 @kc.group
 def sampler():
@@ -60,12 +63,10 @@ def run(ctx, name: str):
     sampler = sampler(**kwargs)
     sample = sampler.sample()
 
-    assert isinstance(sample, Sample), f"Sampler returned non-sample type: %s" % type(sample)
+    assert isinstance(sample, (pd.Series, pd.DataFrame)), f"Sampler returned non-sample type: %s" % type(sample)
 
-    if hasattr(sampler, 'print_data'):
-        sampler.print_data(sample.data_points)
-    else:
-        print(sample.data_points)
+    # TODO: Breakdown the `CalibrateRun` saves so that Sample only data can be saved here
+    print(sample)
 
 @kc.command(context_settings={
     'ignore_unknown_options': True,

@@ -1,24 +1,95 @@
+import re
 import sys
 from datetime import datetime
+from typing import List
+from uuid import uuid4
 
 import click
 
-from k_calibrate.data import NR_HELM_VALUES_PATH, render_file_to_temp
+from k_calibrate.dev import (
+    APPLIES,
+    DevCluster,
+    get_cluster,
+    list_clusters,
+    which_cluster,
+)
 from k_calibrate.new_relic import client_from_env_file
-from k_calibrate.utils.cmd import is_cmd, run_cmd
-from k_calibrate.utils.env_file import load_env_file
 from k_calibrate.utils.logging import get_logger
 from k_calibrate.utils.nr import timestamp_to_datetime
 
+from .util import parse_extra_kwargs
+
 logger = get_logger(__name__, cli=True)
 
-@click.command
+@click.group
 def dev():
     pass
 
+@dev.group
+def cluster():
+    pass
+
+
+@cluster.command(context_settings={
+    'ignore_unknown_options': True,
+    'allow_extra_args': True,
+})
+@click.pass_context
+@click.option("--allow-multiple", is_flag=True, help="Allow spawning of multiple clusters")
+def create(ctx, allow_multiple: bool = False):
+
+    cluster = get_cluster()
+    if not allow_multiple and cluster is not None:
+        logger.warning("Existing cluster found and '--allow-multiple' not set, returning pre-existing cluster name.")
+        print(cluster.name)
+        sys.exit(0)
+
+
+    cluster_name = f'kc-dev-{uuid4()}'
+    cluster = DevCluster(
+        name=cluster_name,
+        create=True,
+        release_on_del=False, # CLI clusters outlive CLI execution
+        created_from='cli',
+        create_args=ctx.args
+    )
+
+    logger.info("Cluster created!")
+    print(cluster.name)
+
+@cluster.command
+def setup():
+    cluster = get_cluster()
+    if cluster is None:
+        logger.error("Unable to find existing cluster!")
+        sys.exit(1)
+
+    with cluster.shared_data as d:
+        config_path = d.config_path()
+
+    logger.info("Usage: $(kc dev cluster setup)")
+    print(f'export KUBECONFIG={config_path}')
+
+@cluster.command
+def delete_all():
+    clusters = list_clusters()
+    for cluster in clusters:
+        cluster._delete()
+
+    if len(clusters) == 0:
+        logger.info("No clusters to delete!")
+    else:
+        logger.info("All clusters deleted!")
+
+
+@cluster.command('list')
+def dev_cluster_list():
+    for cluster in list_clusters():
+        print(cluster.name)
+
 @dev.command
 @click.option('--env-file', help="Path to environment file")
-def list_clusters(env_file: str):
+def nr_list_clusters(env_file: str):
     nr = client_from_env_file(env_file)
 
     logger.info("Querying NR kubernetes sources...")
@@ -40,67 +111,37 @@ def list_clusters(env_file: str):
         last_seen = (now-latest_report).total_seconds()
         print(f"\t'{cluster['clusterName']}' last seen: {last_seen}s")
 
+@cluster.command(context_settings={
+    'ignore_unknown_options': True,
+    'allow_extra_args': True,
+})
+@click.pass_context
+@click.argument('name')
+def apply(ctx, name: str):
+    a = APPLIES.get(name)
+    if a is None:
+        logger.error("No supported apply named '%s'" % name)
+        sys.exit(1)
+    a = a()
 
-@dev.command
-@click.argument('cluster-name')
-@click.option('--env-file', help="Path to environment file")
-def nr_bootstrap(cluster_name: str, env_file: str):
-    if env_file is not None:
-        env = load_env_file(env_file)
-    else:
-        env = load_env_file()
-
-    if not is_cmd('kubectl') or not is_cmd('helm'):
-        logger.error("Cluster bootstrap requires both 'kubectl' and 'helm' to be installed")
+    cluster_name = which_cluster()
+    if cluster_name is None:
+        logger.error("No cluster found, please use the 'setup' / 'create' tool first")
         sys.exit(1)
 
-    logger.info("Rendering helm values...")
-    helm_values_path = render_file_to_temp(
-        NR_HELM_VALUES_PATH,
-        {
-            'cluster_name': cluster_name,
-            'license_key': env.get_license_key()
-        }
-    )
-
-    logger.info("Testing cluster connection")
-    result = run_cmd(
-        ['kubectl', 'cluster-info'],
-        expected_return_codes=[0, 1] # Expecting 1 to handle gracefully
-    )
-    if result.returncode == 1:
-        logger.error("Unable to get cluster info via 'kubectl', is the cluster active")
+    cluster = get_cluster(cluster_name)
+    if cluster is None:
+        logger.error("Cluster defined by 'KUBECONFIG' can no longer be found.")
         sys.exit(1)
 
-    logger.info("Adding NR helm repo")
-    run_cmd(
-        ['helm', 'repo', 'add', 'newrelic', 'https://helm-charts.newrelic.com'],
-    )
+    kwargs = parse_extra_kwargs(ctx)
+    with cluster.shared_data as d:
+        try:
+            new_labels = a.apply(d.name, **kwargs)
+        except Exception as err:
+            logger.error("Apply failed: %s" % err)
+            sys.exit(1)
 
-    helm_args = [
-        'helm', 'upgrade', '--install', 'newrelic-bundle', 'newrelic/nri-bundle',
-        '--namespace', 'newrelic', '--create-namespace',
-        '-f', helm_values_path.name,
-        # Validating args
-        '--dry-run',
-        '--debug'
-    ]
-    logger.info("Validating helm command...")
-    with open(helm_values_path.name, 'r') as f:
-        print(f.read())
-    run_cmd(
-        helm_args
-    )
-
-
-    logger.info("Bootstrapping activate kubetctl context with NR integration, naming cluster '%s'" % cluster_name)
-    helm_args.remove('--dry-run')
-    helm_args.remove('--debug')
-    run_cmd(
-        helm_args
-    )
-
-    logger.info("Bootstraping complete!")
-    logger.info("Note: Services may take a while to spin up, check status with the command below.")
-    print('\tkubectl -n newrelic get pods -w')
-    # TODO: Preform monitoring here?
+        if new_labels is not None:
+            for label in new_labels:
+                d.labels.add(label)

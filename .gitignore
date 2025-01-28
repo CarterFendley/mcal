@@ -2,6 +2,9 @@
 # -----
 env.toml
 kc_run_data/
+
+kc-dev-*.json
+kc-dev-*-kubeconfig
 # -----
 # [END CUSTOM]
 

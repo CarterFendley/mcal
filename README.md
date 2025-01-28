@@ -22,8 +22,10 @@ pip install -e '.[all]'
 python -m pytest --cov k_calibrate
 python -m pytest --cov k_calibrate --slow # With slow tests
 
+# Run full test suite across all versions
 # Note: Tox will run slow tests
-tox -e cov_clean,py312
+tox
+tox -m single_version
 ```
 
 ### Kubernetes

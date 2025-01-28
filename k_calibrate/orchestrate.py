@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 
 import pandas as pd
 
-from k_calibrate.calibrate import Sample, Sampler
+from k_calibrate.calibrate import Sampler
 from k_calibrate.config import KCConfig, load_config_file
 from k_calibrate.utils.logging import get_logger
 from k_calibrate.utils.pandas import load_dtypes, save_dtypes
@@ -101,7 +101,8 @@ def load_run(path: str) -> CalibrationRun:
             collected_data[name] = pd.read_csv(
                 file_path,
                 dtype=dtypes_dict,
-                parse_dates=parse_dates
+                parse_dates=parse_dates,
+                index_col=0 # Avoids 'Unnamed: 0' from showing up
             )
         else:
             raise NotImplementedError("Found unexpected type in save folder: %s" % ext)
@@ -118,7 +119,10 @@ def load_run(path: str) -> CalibrationRun:
         collected_data=collected_data
     )
 
-async def _run_sampler(name: str, sampler: Sampler) -> Tuple[str, Sample]:
+async def _run_sampler(
+    name: str,
+    sampler: Sampler
+) -> Tuple[str, pd.DataFrame]:
     # Small async wrapper for sampler execution
     loop = asyncio.get_running_loop()
 
@@ -127,10 +131,15 @@ async def _run_sampler(name: str, sampler: Sampler) -> Tuple[str, Sample]:
     # Reference: https://stackoverflow.com/a/43263397/11325551
     sample = await loop.run_in_executor(None, sampler.sample)
 
-    assert isinstance(sample, Sample), "Sampler '%s' returned value which is not an instance of 'Sample': %s" % (sampler.__class__.__name__, sample)
+    assert isinstance(sample, (pd.Series, pd.DataFrame)), "Sampler '%s' returned value which is not an instance of 'Sample': %s" % (sampler.__class__.__name__, sample)
 
-    if sample.timestamp is None:
-        sample.timestamp = sample_time
+    if isinstance(sample, pd.Series):
+        sample = sample.to_frame().T
+
+    if 'timestamp' not in sample.columns:
+        sample['timestamp'] = sample_time
+    else:
+        assert isinstance(sample.dtypes['timestamp'], datetime)
 
     return name, sample
 
@@ -139,15 +148,13 @@ async def run(
 ) -> CalibrationRun:
     schedule, samplers, actions, stop_criteria = config.create()
 
-    # Create run data object and allocate dataframes
+    # Create run data object and pre-allocate space in the data dict
     run_data = CalibrationRun(
         start_time=utc_now(),
         config=config
     )
     for name in samplers.keys():
-        df = pd.DataFrame()
-        df.index.name = 'iteration'
-        run_data.collected_data[name] = df
+        run_data.collected_data[name] = None
 
     stats = RunStats()
     while not stop_criteria(stats):
@@ -162,11 +169,16 @@ async def run(
         for task in asyncio.as_completed(tasks):
             name, sample = await task
 
-            # Store as new row
+            existing_df = run_data.collected_data[name]
+            if run_data.collected_data[name] is not None:
+                assert existing_df.dtypes.equals(sample.dtypes), "Sampler returned different datatypes on different executions"
+            else:
+                existing_df = pd.DataFrame()
+
             run_data.collected_data[name] = pd.concat(
                 [
-                    run_data.collected_data[name],
-                    pd.DataFrame(sample.as_pandas_row()),
+                    existing_df,
+                    sample,
                 ],
                 ignore_index=True, # Don't 100% understand this param
             )

@@ -1,7 +1,7 @@
 global:
   # NOTE: The indent is not from the docs, and is not needed outside of the kc cli, but for some reason is inside :shrug:
-  licenseKey: "{license_key}"
-  cluster: "{cluster_name}"
+  licenseKey: "{{license_key}}"
+  cluster: "{{cluster_name}}"
 
 newrelic-prometheus-agent:
 # Automatically scrape prometheus metrics for annotated services in the cluster

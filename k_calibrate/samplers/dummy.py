@@ -2,24 +2,26 @@ import os
 import time
 from typing import Optional
 
-from k_calibrate.calibrate import Sample, Sampler
+import pandas as pd
+
+from k_calibrate.calibrate import Sampler
 
 
 class _DummySampler(Sampler):
     def __init__(self, delay: Optional[float] = None):
         self.delay = delay
 
-    def sample(self):
+    def sample(self) -> pd.DataFrame:
         if self.delay is not None:
             time.sleep(self.delay)
 
-        return Sample(data_points={})
+        return pd.DataFrame([{'dummy': None}])
 
 class _DummyFileCount(Sampler):
     def __init__(self, directory: str):
         self.directory = directory
 
-    def sample(self) -> Sample:
-        return Sample(data_points={
+    def sample(self) -> pd.DataFrame:
+        return pd.DataFrame([{
             'file_count': len(os.listdir(self.directory))
-        })
+        }])
