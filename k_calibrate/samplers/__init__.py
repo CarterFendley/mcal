@@ -1,3 +1,5 @@
+from .dask_k8_cluster import DaskK8Cluster
+from .dask_prom_scheduler import DaskPromScheduler
 from .dummy import _DummyFileCount, _DummySampler
 from .kubectl_top import KubectlTop
 # from .k8_basic_stats import K8BasicStats
@@ -11,6 +13,9 @@ SAMPLERS = [
     KubectlTop,
     # # K8
     # K8BasicStats,
+    # Dask
+    DaskK8Cluster,
+    DaskPromScheduler,
     # # NR
     NRTop,
     # NRBasicStats,

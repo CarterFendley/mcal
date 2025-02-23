@@ -141,7 +141,7 @@ def which_cluster() -> Optional[str]:
     if config_name.startswith('kc-dev-') and config_name.endswith('-kubeconfig'):
         return config_name.removesuffix('-kubeconfig')
 
-def get_cluster(cluster_name: Optional[str]) -> Optional[DevCluster]:
+def get_cluster(cluster_name: Optional[str] = None) -> Optional[DevCluster]:
     clusters = list_clusters()
     if len(clusters) == 0:
         return None
@@ -251,7 +251,33 @@ class NRI(Apply):
             'apply/new_relic'
         ]
 
+class DaskOperator(Apply):
+    def apply(self, cluster_name: str):
+        if not is_cmd('kubectl') or not is_cmd('helm'):
+            raise RuntimeError("Cluster bootstrap requires both 'kubectl' and 'helm' to be installed")
+
+        logger.info("Testing cluster connection")
+        result = run_cmd(
+            ['kubectl', 'cluster-info'],
+            expected_return_codes=[0, 1] # Expecting 1 to handle gracefully
+        )
+        if result.returncode == 1:
+            raise RuntimeError("Unable to get cluster info via 'kubectl', is the cluster active")
+
+        logger.info("Adding DaskOperator")
+        run_cmd([
+            'helm', 'install',
+            '--repo', 'https://helm.dask.org',
+            '--create-namespace', '-n', 'dask-operator',
+            '--generate-name', 'dask-kubernetes-operator'
+        ])
+
+        return [
+            'apply/dask_operator'
+        ]
+
 APPLIES = {
     'MetricsServer': MetricsServer,
     'NRI': NRI,
+    'DaskOperator': DaskOperator,
 }

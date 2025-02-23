@@ -135,7 +135,7 @@ def apply(ctx, name: str):
         sys.exit(1)
 
     kwargs = parse_extra_kwargs(ctx)
-    with cluster.shared_data as d:
+    with cluster.shared_data as d: # TODO: Don't grab the lock this whole time, these operations run for a while
         try:
             new_labels = a.apply(d.name, **kwargs)
         except Exception as err:

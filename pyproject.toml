@@ -33,9 +33,18 @@ dev = [
     "tox",
     "pytest",
     "pytest-cov",
-    "pytest-benchmark"
+    "pytest-benchmark",
+    "pytest-unordered"
+]
+dask = [
+    "dask",
+    "distributed",
+    "dask-kubernetes",
+    "prometheus-client",
+    # db-benchmark
+    "pyarrow"
 ]
 docs = [
     "mkdocs"
 ]
-all = ["k-calibrate[dev, docs]"]
+all = ["k-calibrate[dev, dask, docs]"]

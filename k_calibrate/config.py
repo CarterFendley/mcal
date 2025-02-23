@@ -95,7 +95,7 @@ class ActionConfig(FunctionAsKind):
     @model_validator(mode='after')
     def check_function_as_kind(self) -> ActionConfig:
         # Validate action
-        self.create_callable('k_calibrate.actions')
+        self.create_callable('k_calibrate.actions.builtin')
         return self
 
 class KCConfig(BaseModel): 

@@ -28,6 +28,35 @@ tox
 tox -m single_version
 ```
 
+### Dev Kubernetes
+
+Install the following:
+- Kind
+- Kubectl
+- Helm
+
+Setup cluster
+
+```bash
+# Create kind cluster
+kc dev cluster create
+# Configure KUBECONFIG to use created cluster
+$(kc dev cluster setup)
+```
+
+Apply needed configurations
+
+```bash
+kc dev cluster apply MetricsServer
+kc dev cluster apply NRI
+kc dev cluster apply DaskOperator
+```
+
+Delete cluster after finished
+```bash
+kc dev cluster delete-all
+```
+
 ### Kubernetes
 
 The following instructions are for creating a [kind cluster](https://kind.sigs.k8s.io/)

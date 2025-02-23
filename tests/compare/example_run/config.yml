@@ -1,0 +1,19 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 5s
+samplers:
+- kind: KubectlTop
+  args:
+    command: pod
+  name: null
+- kind: NRTop
+  args:
+    command: pod
+    cluster_name: kc-dev-c2b8b0d3-dede-462d-b675-dde52f20d1f1
+  name: null
+stop_criteria:
+  kind: builtin:after_iterations
+  args:
+    amount: 15
+actions: []

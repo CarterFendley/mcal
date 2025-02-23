@@ -1,0 +1,11 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 5s
+samplers:
+  - kind: DaskK8Cluster
+  - kind: DaskPromScheduler
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 5

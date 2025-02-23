@@ -139,7 +139,7 @@ async def _run_sampler(
     if 'timestamp' not in sample.columns:
         sample['timestamp'] = sample_time
     else:
-        assert isinstance(sample.dtypes['timestamp'], datetime)
+        assert pd.api.types.is_datetime64_any_dtype(sample['timestamp']), f"Sampler '{name}' returned 'timestamp' which is not an instance of datetime"
 
     return name, sample
 

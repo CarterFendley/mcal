@@ -1,0 +1,16 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 5s
+samplers:
+  - kind: KubectlTop
+    args:
+      command: {{command}}
+  - kind: NRTop
+    args:
+      command: {{command}}
+      cluster_name: {{cluster_name}}
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 15
