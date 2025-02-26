@@ -3,7 +3,7 @@ import os
 
 from k_calibrate import compare
 from k_calibrate.compare import Compare, filter_timestamps
-from k_calibrate.orchestrate import load_run
+from k_calibrate.runner.models import load_run
 
 THIS_DIR = os.path.abspath(
     os.path.dirname(__file__)

@@ -22,6 +22,7 @@ class PortForwardConnection(HTTPConnection):
         self._create_connection = self.__create_pf_conn
 
     def __create_pf_conn(self, *args, **kwargs):
+        # TODO: If pods servers are not ready, this can explode as soon as a request is sent
         return self.ws_portforward.socket(self.port)
 
     def close(self):
@@ -69,7 +70,7 @@ class K8Resources:
 
         return clusters
 
-    def find_schedulers(self, cluster: dict):
+    def find_schedulers(self, cluster: dict, must_be_ready: bool = True):
         """Update cluster with schedulers"""
         service = self.v1_api.read_namespaced_service(
             name=SCHEDULER_NAME_TEMPLATE.format(cluster_name=cluster['name']),
@@ -83,7 +84,14 @@ class K8Resources:
             namespace=cluster['namespace'],
             label_selector=service_selector
         )
-        pod_names = [item.metadata.name for item in pods.items]
+        if must_be_ready:
+            pods_list = list(filter(
+                lambda item: all(status.ready for status in item.status.container_statuses),
+                pods.items
+            ))
+        else:
+            pod_list = pods.items
+        pod_names = [item.metadata.name for item in pods_list]
 
         cluster['scheduler_pods'] = pod_names
 
@@ -115,11 +123,18 @@ class DaskPromScheduler(Sampler):
         for cluster in clusters:
             cluster_info = {}
             cluster_info['namespace'] = cluster['namespace']
-            cluster_info['name'] = cluster['name']
+            cluster_info['cluster_name'] = cluster['name']
             cluster_info['kind'] = cluster['kind']
 
-            assert len(cluster['scheduler_pods']) == 1, "Only implemented for one scheduler pod not: %s" % len(cluster['scheduler_pods'])
+            num_schedulers = len(cluster['scheduler_pods'])
+            if num_schedulers == 0:
+                # Bail out, nothing to read
+                continue
+            elif num_schedulers != 1:
+                raise RuntimeError("Only implemented for one scheduler pod not: %s" % num_schedulers)
+
             scheduler_pod = cluster['scheduler_pods'][0]
+            cluster_info['scheduler_name'] = scheduler_pod
             conn = self.resources.get_conn(
                 namespace=cluster['namespace'],
                 pod_name=scheduler_pod,
@@ -134,13 +149,27 @@ class DaskPromScheduler(Sampler):
                 # https://distributed.dask.org/en/latest/prometheus.html
                 for family in families:
                     if family.name == 'dask_scheduler_workers':
+                        worker_info = {}
+                        total = 0
                         for sample in family.samples:
                             state = sample.labels['state']
-                            cluster_info[f'workers_{state}'] = sample.value
+                            worker_info[f'workers_{state}'] = sample.value
+                            total += sample.value
+
+                        # This is just to order 'workers_total' first
+                        cluster_info['workers_total'] = total
+                        cluster_info.update(worker_info)
                     if family.name == 'dask_scheduler_tasks':
+                        task_info = {}
+                        total = 0
                         for sample in family.samples:
                             state = sample.labels['state']
-                            cluster_info[f'tasks_{state}'] = sample.value
+                            task_info[f'tasks_{state}'] = sample.value
+                            total += sample.value
+
+                        # This is just to order 'tasks_total' first
+                        cluster_info['tasks_total'] = total
+                        cluster_info.update(task_info)
 
             # TODO: Combine these
             conn.ws_portforward.close()

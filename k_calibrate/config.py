@@ -10,9 +10,11 @@ import oyaml as yaml
 from jinja2 import BaseLoader, Environment
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from k_calibrate.actions import Action
 from k_calibrate.calibrate import (Sampler, Schedule, get_sampler,
                                    get_schedule, is_sampler, is_schedule)
 from k_calibrate.utils.logging import get_logger
+from k_calibrate.watchers import Watcher
 
 logger = get_logger(__name__)
 
@@ -45,10 +47,14 @@ class ScheduleConfig(KindArgs):
 
         return self
 
-class FunctionAsKind(KindArgs):
-    _callable: Callable = None
+class ObjectAsKind(KindArgs):
+    _object: Callable = None
 
-    def create_callable(self, builtin_module: str):
+    def create_object(
+        self,
+        builtin_module: str,
+        always_construct: bool = False
+    ):
         try:
             module_path, obj_name= self.kind.split(":")
 
@@ -70,32 +76,46 @@ class FunctionAsKind(KindArgs):
             raise ValueError("Module '%s' has no attribute '%s'" % (module_path, obj_name))
         obj = getattr(module, obj_name)
 
-        if len(self.args) != 0:
+        if len(self.args) != 0 or always_construct:
             # TODO: More validation
             # 1. Look at signature? (for params / stats validation)
             # 2. Make abstract class?
             try:
                 obj = obj(**self.args)
             except Exception as err:
-                logger.error("Failed to construct stop criteria function, args were supplied indicating that '%s' should be curried. Are the correct arguments passed: %s" % (obj_name, self.args))
+                logger.error("Failed to construct object, args were supplied indicating that '%s' should be curried / constructed. Are the correct arguments passed: %s" % (obj_name, self.args))
                 logger.error("Exception raised: %s" % err)
 
-                raise ValueError("Failed to construct criteria function given supplied args.") from err 
+                raise ValueError("Failed to construct criteria function given supplied args.") from err
 
-        self._callable = obj
+        self._object = obj
 
-class StopCriteriaConfig(FunctionAsKind):
+class WatcherConfig(ObjectAsKind):
     @model_validator(mode='after')
-    def check_function_as_kind(self) -> StopCriteriaConfig:
-        # Validate stop_criteria
-        self.create_callable('k_calibrate.criteria')
+    def check_object_as_kind(self) -> WatcherConfig:
+        # Validate watcher
+        self.create_object('k_calibrate.watchers.builtin', always_construct=True)
+
+        if not isinstance(self._object, Watcher):
+            raise ValueError("Object specified by '%s' is not a watcher: %s - %s" % (self.kind, type(self._object), self._object))
+
         return self
 
-class ActionConfig(FunctionAsKind):
+class ActionConfig(ObjectAsKind):
     @model_validator(mode='after')
     def check_function_as_kind(self) -> ActionConfig:
         # Validate action
-        self.create_callable('k_calibrate.actions.builtin')
+        self.create_object('k_calibrate.actions.builtin', always_construct=True)
+
+        if not isinstance(self._object, Action):
+            raise ValueError("Object specified by '%s' is not a action: %s - %s" % (self.kind, type(self._object), self._object))
+        return self
+
+class StopCriteriaConfig(ObjectAsKind):
+    @model_validator(mode='after')
+    def check_function_as_kind(self) -> StopCriteriaConfig:
+        # Validate stop_criteria
+        self.create_object('k_calibrate.criteria')
         return self
 
 class KCConfig(BaseModel): 
@@ -103,7 +123,8 @@ class KCConfig(BaseModel):
 
     schedule: ScheduleConfig
     samplers: List[SamplerConfig]
-    stop_criteria: StopCriteriaConfig
+    watchers: List[WatcherConfig] = Field(default_factory=lambda: [])
+    stop_criteria: StopCriteriaConfig = Field(default=None)
     actions: List[ActionConfig] = Field(default_factory=lambda: [])
 
     _schedule: Schedule = None
@@ -131,15 +152,20 @@ class KCConfig(BaseModel):
         with open(path, 'w') as f:
             yaml.dump(data, f)
 
-    def create(self) -> Tuple[Schedule, Dict[str, Sampler], List[Callable], Callable]:
+    def get_stop_criteria(self) -> Optional[Callable]:
+        if self.stop_criteria is not None:
+            return self.stop_criteria._object
+
+    def create(self) -> Tuple[Schedule, Dict[str, Sampler], List[Watcher], List[Action], Callable]:
         if self._schedule is not None or self._samplers is not None:
             assert self._schedule is not None and self._samplers is not None, "Schedule or sampler has been constructed but not both. This should not happen."
 
             return (
                 self._schedule,
                 self._samplers,
-                list(map(lambda x: x._callable, self.actions)),
-                self.stop_criteria._callable
+                list(map(lambda x: x._object, self.watchers)),
+                list(map(lambda x: x._object, self.actions)),
+                self.get_stop_criteria()
             )
 
         # NOTE: Here we are constructing samplers first, bc schedule constructors may be permitted to use samplers to measure parameters for use in schedule. Note how samplers are passed into schedule construction.
@@ -190,19 +216,24 @@ class KCConfig(BaseModel):
         return (
             schedule,
             samplers,
-            list(map(lambda x: x._callable, self.actions)),
-            self.stop_criteria._callable
+            list(map(lambda x: x._object, self.watchers)),
+            list(map(lambda x: x._object, self.actions)),
+            self.get_stop_criteria()
         )
 
 def load_config_file(path: str, arguments: Dict[str, Any]) -> KCConfig:
     assert os.path.isfile(path), "Config path is not a file: %s" % path
     with open(path, 'r') as f:
-        return load_config(f.read(), arguments)
+        return load_config(f.read(), arguments, file_path=path)
 
-def load_config(string: str, arguments: Dict[str, Any]) -> KCConfig:
+def load_config(string: str, arguments: Dict[str, Any], file_path: str = None) -> KCConfig:
     # Render variables if they exist
+    if file_path is not None:
+        loader = jinja2.FileSystemLoader(os.path.dirname(file_path))
+    else:
+        loader = BaseLoader()
     env = Environment(
-        loader=BaseLoader(),
+        loader=loader,
         undefined=jinja2.StrictUndefined
     )
     template = env.from_string(string)

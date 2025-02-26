@@ -1,19 +1,47 @@
+from __future__ import annotations
+
 import os
 import time
+from abc import ABC
+from typing import TYPE_CHECKING, Callable, Type
 
-from k_calibrate.orchestrate import RunStats
+if TYPE_CHECKING:
+    # Run stats uses the 'k_calibrate.config' module which also uses this class causing a circular import
+    from k_calibrate.runner.models import RunStats
 
+class Action(ABC):
+    AWAIT_AFTER_ITER = True
 
-def _dummy_file_create(directory: str, prefix: str = ''):
-    def __dummy_file_create(stats: RunStats):
-        file_path = os.path.join(directory, f'{prefix}{stats.iterations}.txt')
+    def after_iter(self, stats: RunStats):
+        pass
+
+    # TODO: Move the after_iter here
+
+def action(func: Callable) -> Type[Action]:
+    class ActionGenerator(Action):
+        def run(stats: RunStats):
+            func(stats)
+
+    return ActionGenerator
+
+class _DummyFileCreate(Action):
+    def __init__(self, directory: str, prefix: str = ''):
+        self.directory = directory
+        self.prefix = prefix
+
+    def after_iter(self, stats: RunStats):
+        file_path = os.path.join(
+            self.directory,
+            f'{self.prefix}{stats.iterations}.txt')
         with open(file_path, 'w') as f:
             pass
 
-    return __dummy_file_create
+class _DummySleepAction(Action):
+    def __init__(self, delay: float):
+        self.delay = delay
 
-def _dummy_delayed_action(delay: float):
-    def __dummy_delayed_action(stats: RunStats):
-        time.sleep(delay)
+    def after_iter(self, stats: RunStats):
+        time.sleep(self.delay)
 
-    return __dummy_delayed_action
+class _DummyNoAwait(_DummySleepAction):
+    AWAIT_AFTER_ITER = False

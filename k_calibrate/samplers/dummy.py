@@ -8,14 +8,30 @@ from k_calibrate.calibrate import Sampler
 
 
 class _DummySampler(Sampler):
-    def __init__(self, delay: Optional[float] = None):
+    """Dummy sampler used for multipurpose testing"""
+    def __init__(
+        self,
+        delay: Optional[float] = None,
+        value: str = 'none',
+        error_at: Optional[int] = None,
+    ):
+        self.samples = 0
         self.delay = delay
+
+        if value == 'none':
+            self.value = lambda: None
+        elif value == 'sample_num':
+            self.value = lambda: self.samples
+        else:
+            raise NotImplementedError("Return type is not implemented: %s" % self.value)
 
     def sample(self) -> pd.DataFrame:
         if self.delay is not None:
             time.sleep(self.delay)
 
-        return pd.DataFrame([{'dummy': None}])
+        df = pd.DataFrame([{'dummy': self.value()}])
+        self.samples += 1
+        return df
 
 class _DummyFileCount(Sampler):
     def __init__(self, directory: str):

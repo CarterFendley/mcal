@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Protocol, Tuple, TypeAlias
 
 import pytest
 
-from k_calibrate.orchestrate import CalibrationRun, load_run
+from k_calibrate.runner.models import CalibrationRun, load_run
 from k_calibrate.utils.cmd import run_cmd
 
 CLIRunResult: TypeAlias = Tuple[CompletedProcess, Optional[CalibrationRun]]

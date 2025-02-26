@@ -42,7 +42,11 @@ dask = [
     "dask-kubernetes",
     "prometheus-client",
     # db-benchmark
-    "pyarrow"
+    "pyarrow",
+    "toolz==0.12.0", # TODO: Hacky, just matching the current images
+    "lz4==4.3.3", # TODO: Hacky, just matching the current images
+    # dask-taxicab
+    "gcsfs"
 ]
 docs = [
     "mkdocs"

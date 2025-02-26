@@ -7,11 +7,11 @@ samplers:
     args:
       directory: {{directory}}
 actions:
-  - kind: 'builtin:_dummy_file_create'
+  - kind: 'builtin:_DummyFileCreate'
     args:
       prefix: one
       directory: {{directory}}
-  - kind: 'builtin:_dummy_file_create'
+  - kind: 'builtin:_DummyFileCreate'
     args:
       prefix: two
       directory: {{directory}}

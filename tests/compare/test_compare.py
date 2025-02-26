@@ -6,7 +6,7 @@ from pytest_unordered import unordered
 
 from k_calibrate.compare import Compare
 from k_calibrate.config import KCConfig, ScheduleConfig, StopCriteriaConfig
-from k_calibrate.orchestrate import CalibrationRun
+from k_calibrate.runner.models import CalibrationRun
 from k_calibrate.utils.time import utc_now
 
 FAKE_CONFIG = KCConfig(

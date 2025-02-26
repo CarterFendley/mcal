@@ -1,0 +1,14 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 0.1s
+samplers:
+  - kind: _DummySampler
+    args:
+      value: sample_num
+watchers:
+  - kind: builtin:_DummyWatcher
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 5

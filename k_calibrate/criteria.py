@@ -1,5 +1,5 @@
 # Built in criteria
-from k_calibrate.orchestrate import RunStats
+from k_calibrate.runner.models import RunStats
 
 
 def after_iterations(amount: int):

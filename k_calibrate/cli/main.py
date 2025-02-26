@@ -5,12 +5,12 @@ from typing import Optional
 import click
 import pandas as pd
 
-from k_calibrate import orchestrate
 from k_calibrate.calibrate import (
     _load_samplers,
     get_sampler,
 )
 from k_calibrate.config import load_config_file
+from k_calibrate.runner import orchestrate
 from k_calibrate.utils.logging import get_logger, set_cli_level
 
 from .dev import dev
@@ -25,7 +25,7 @@ def kc(verbose: int):
         level=verbose,
         extra_modules=[
             "k_calibrate.calibrate",
-            "k_calibrate.orchestrate"
+            "k_calibrate.runner.orchestrate"
         ]
     )
 

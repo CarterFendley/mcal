@@ -3,13 +3,11 @@ schedule:
   args:
     interval: {{interval}}
 samplers:
-  - kind: _DummyFileCount
-    args:
-      directory: {{directory}}
+  - kind: _DummySampler
 actions:
-  - kind: 'builtin:_DummyFileCreate'
+  - kind: 'builtin:_DummyNoAwait'
     args:
-      directory: {{directory}}
+      delay: {{delay}}
 stop_criteria:
   kind: 'builtin:after_iterations'
   args:

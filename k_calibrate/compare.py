@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 
 import pandas as pd
 
-from k_calibrate.orchestrate import CalibrationRun
+from k_calibrate.runner.models import CalibrationRun
 from k_calibrate.utils.logging import get_logger
 
 logger = get_logger(__name__)
