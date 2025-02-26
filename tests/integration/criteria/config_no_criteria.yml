@@ -1,0 +1,6 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 50ms
+samplers:
+  - kind: _DummySampler
