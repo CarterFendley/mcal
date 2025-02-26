@@ -52,7 +52,9 @@ async def run(
 
     stats = RunStats()
     logger.info("Starting run loop...")
-    while not stop_criteria(stats):
+    if stop_criteria is None:
+        logger.warning("No stop criteria has been provided, loop will iterate infinitely...")
+    while stop_criteria is None or not stop_criteria(stats):
         # NOTE: Given the structure of schedules, the fact that we don't pass any "start_time" it is useful to call sleep at the start of the loop so it may capture that or similar concepts without any parameter passing here.
         # NOTE: Schedulers are currently using thread.sleep not asyncio.sleep because this is the outer most async loop and there is nothing else important to make progress.
         schedule.sleep()

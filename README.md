@@ -2,6 +2,14 @@
 
 A multi-purpose calibration tool.
 
+## Get Started
+
+```bash
+pip install m-calibrate
+
+mcal run <my_config.yml>
+```
+
 ## Local setup
 
 ```bash
