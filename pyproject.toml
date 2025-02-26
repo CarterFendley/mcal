@@ -1,5 +1,5 @@
 [project]
-name='m-cal'
+name='m-calibrate'
 description='A multi-purpose calibration tool.'
 authors=[
     { name = 'Carter Fendley' }
@@ -61,4 +61,4 @@ dask = [
 docs = [
     "mkdocs"
 ]
-all = ["m-cal[dev, dask, docs]"]
+all = ["m-calibrate[dev, dask, docs]"]
