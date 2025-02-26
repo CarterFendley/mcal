@@ -86,7 +86,10 @@ class K8Resources:
         )
         if must_be_ready:
             pods_list = list(filter(
-                lambda item: all(status.ready for status in item.status.container_statuses),
+                lambda item: (
+                    item.status.container_statuses is not None
+                    and all(status.ready for status in item.status.container_statuses)
+                ),
                 pods.items
             ))
         else:
