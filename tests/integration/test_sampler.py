@@ -3,12 +3,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from k_calibrate.utils.cmd import run_cmd
+from mcal.utils.cmd import run_cmd
 
 
 def test_sampler_doesnt_exist():
     result = run_cmd(
-        args=['kc', '-vvv', 'sampler', 'run', 'SamplerDoesNotExist'],
+        args=['mcal', '-vvv', 'sampler', 'run', 'SamplerDoesNotExist'],
         expected_return_codes=[1],
         capture_output=True
     )
@@ -24,7 +24,7 @@ def test_sampler_execution(tmpdir: Path, num_files: int):
         (tmpdir / f'file_{i}.txt').touch()
 
     result = run_cmd(
-        args=['kc', '-vvv',
+        args=['mcal', '-vvv',
               'sampler', 'run', '_DummyFileCount',
               f'--directory={tmpdir}'
         ],

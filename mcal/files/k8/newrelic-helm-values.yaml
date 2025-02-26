@@ -1,0 +1,24 @@
+global:
+  # NOTE: The indent is not from the docs, and is not needed outside of the mcal cli, but for some reason is inside :shrug:
+  licenseKey: "{{license_key}}"
+  cluster: "{{cluster_name}}"
+
+newrelic-prometheus-agent:
+# Automatically scrape prometheus metrics for annotated services in the cluster
+# Collecting prometheus metrics for large clusters might impact data usage significantly
+enabled: true
+nri-metadata-injection:
+# Deploy our webhook to link APM and Kubernetes entities
+enabled: true
+nri-kube-events:
+# Report Kubernetes events
+enabled: true
+newrelic-logging:
+# Report logs for containers running in the cluster
+enabled: true
+kube-state-metrics:
+# Deploy kube-state-metrics in the cluster.
+# Set this to true unless it is already deployed.
+enabled: true
+storageClass:
+    enabled: standard-rwx

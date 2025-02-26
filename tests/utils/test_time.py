@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import pytest
 
-from k_calibrate.utils.time import (
+from mcal.utils.time import (
     _UNABLE_TO_PARSE_MESSAGE,
     parse_timedelta,
     to_timedelta_str,

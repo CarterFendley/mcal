@@ -1,9 +1,9 @@
 import logging
 import os
 
-from k_calibrate import compare
-from k_calibrate.compare import Compare, filter_timestamps
-from k_calibrate.runner.models import load_run
+from mcal import compare
+from mcal.compare import Compare, filter_timestamps
+from mcal.runner.models import load_run
 
 THIS_DIR = os.path.abspath(
     os.path.dirname(__file__)

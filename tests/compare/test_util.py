@@ -2,9 +2,9 @@ import logging
 
 import pytest
 
-from k_calibrate import compare
-from k_calibrate.compare import respond_to_event
-from k_calibrate.utils.logging import get_logger
+from mcal import compare
+from mcal.compare import respond_to_event
+from mcal.utils.logging import get_logger
 
 logger_name = compare.__name__
 

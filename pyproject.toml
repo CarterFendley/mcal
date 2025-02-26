@@ -1,9 +1,14 @@
 [project]
-name='k-calibrate'
-description='Calibrate!'
-version='0.0.0'
+name='mcal'
+description='A multi-purpose calibration tool.'
 authors=[
     { name = 'Carter Fendley' }
+]
+version='0.0.0'
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
 ]
 
 dependencies = [
@@ -19,13 +24,17 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["k_calibrate*"]
+include = ["mcal*"]
 
-[project.entry-points."k_calibrate.samplers"]
-samplers = "k_calibrate.samplers:SAMPLERS"
+[tool.setuptools.package-data]
+mcal = ["files/**"]
+
+
+[project.entry-points."mcal.samplers"]
+samplers = "mcal.samplers:SAMPLERS"
 
 [project.scripts]
-kc = "k_calibrate.cli.main:kc"
+mcal = "mcal.cli.main:mcal"
 
 [project.optional-dependencies]
 dev = [
@@ -51,4 +60,4 @@ dask = [
 docs = [
     "mkdocs"
 ]
-all = ["k-calibrate[dev, dask, docs]"]
+all = ["mcal[dev, dask, docs]"]

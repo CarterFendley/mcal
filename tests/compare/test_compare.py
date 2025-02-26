@@ -4,12 +4,12 @@ from unittest.mock import patch
 import pandas as pd
 from pytest_unordered import unordered
 
-from k_calibrate.compare import Compare
-from k_calibrate.config import KCConfig, ScheduleConfig, StopCriteriaConfig
-from k_calibrate.runner.models import CalibrationRun
-from k_calibrate.utils.time import utc_now
+from mcal.compare import Compare
+from mcal.config import MCalConfig, ScheduleConfig, StopCriteriaConfig
+from mcal.runner.models import CalibrationRun
+from mcal.utils.time import utc_now
 
-FAKE_CONFIG = KCConfig(
+FAKE_CONFIG = MCalConfig(
     schedule=ScheduleConfig(
         kind='IntervalSchedule',
         args={'interval': '5s'}

@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, Protocol, Tuple, TypeAlias
 
 import pytest
 
-from k_calibrate.runner.models import CalibrationRun, load_run
-from k_calibrate.utils.cmd import run_cmd
+from mcal.runner.models import CalibrationRun, load_run
+from mcal.utils.cmd import run_cmd
 
 CLIRunResult: TypeAlias = Tuple[CompletedProcess, Optional[CalibrationRun]]
 class CLIRunFixture(Protocol):
@@ -27,9 +27,9 @@ def cli_run(tmp_path_factory) -> CLIRunFixture:
         if run_cmd_kwargs is None:
             run_cmd_kwargs = {}
 
-        tmp_path: Path = tmp_path_factory.mktemp("kc_run_data")
+        tmp_path: Path = tmp_path_factory.mktemp("mcal_run_data")
         cli_args = [
-            'kc', '-vvv', 'run', config_path,
+            'mcal', '-vvv', 'run', config_path,
             '--save-directory', str(tmp_path),
             '--save-name', 'run_data'
         ]

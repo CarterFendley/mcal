@@ -1,7 +1,7 @@
 import pytest
 from test_resources import ENV_BAD_FILE, ENV_FILE, ENV_FILE_EMPTY
 
-from k_calibrate.utils.env_file import load_env_file
+from mcal.utils.env_file import load_env_file
 
 
 def test_env_load():

@@ -1,6 +1,6 @@
 import logging
 
-from k_calibrate.utils.logging import get_logger, set_cli_level
+from mcal.utils.logging import get_logger, set_cli_level
 
 
 def test_basic(caplog):

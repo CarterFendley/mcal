@@ -1,8 +1,12 @@
-# k-calibrate
+# Multi Calibrate
+
+A multi-purpose calibration tool.
+
+## Local setup
 
 ```bash
-conda create --name k-calibrate python
-conda activate k-calibrate
+conda create --name mcal python
+conda activate mcal
 ```
 
 ```bash
@@ -19,8 +23,8 @@ pip install -e '.[all]'
 ## Running tests
 
 ```bash 
-python -m pytest --cov k_calibrate
-python -m pytest --cov k_calibrate --slow # With slow tests
+python -m pytest --cov mcal
+python -m pytest --cov mcal --slow # With slow tests
 
 # Run full test suite across all versions
 # Note: Tox will run slow tests
@@ -39,42 +43,22 @@ Setup cluster
 
 ```bash
 # Create kind cluster
-kc dev cluster create
+mcal dev cluster create
 # Configure KUBECONFIG to use created cluster
-$(kc dev cluster setup)
+$(mcal dev cluster setup)
 ```
 
 Apply needed configurations
 
 ```bash
-kc dev cluster apply MetricsServer
-kc dev cluster apply NRI
-kc dev cluster apply DaskOperator
+mcal dev cluster apply MetricsServer
+mcal dev cluster apply NRI
+mcal dev cluster apply DaskOperator
 ```
 
 Delete cluster after finished
 ```bash
-kc dev cluster delete-all
-```
-
-### Kubernetes
-
-The following instructions are for creating a [kind cluster](https://kind.sigs.k8s.io/)
-
-```
-kind create cluster
-```
-
-Bootstrap newrelic integration into the cluster (based on instructions [here](https://docs.newrelic.com/install/kubernetes)).
-
-```
-kc dev nr-bootstrap
-```
-
-List clusters connected to NR
-
-```
-kc dev list-clusters
+mcal dev cluster delete-all
 ```
 
 ### Releasing

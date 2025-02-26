@@ -1,10 +1,10 @@
 # [CUSTOM]
 # -----
 env.toml
-kc_run_data/
+mcal_run_data/
 
-kc-dev-*.json
-kc-dev-*-kubeconfig
+mcal-dev-*.json
+mcal-dev-*-kubeconfig
 # -----
 # [END CUSTOM]
 

@@ -6,7 +6,7 @@ samplers:
   - kind: DaskK8Cluster
   - kind: DaskPromScheduler
 watchers:
-  - kind: k_calibrate.watchers:DaskWatcher
+  - kind: mcal.watchers:DaskWatcher
 stop_criteria:
   kind: 'builtin:after_iterations'
   args:

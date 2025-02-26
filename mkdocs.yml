@@ -1,4 +1,4 @@
-site_name: k-calibrate
+site_name: mcal
 nav:
   - New Relic: new_relic.md
   - Writeups:

@@ -6,7 +6,7 @@ from typing import List
 import pytest
 from test_resources.cli_fixtures import CLIRunFixture
 
-from k_calibrate.utils.time import to_timedelta_str
+from mcal.utils.time import to_timedelta_str
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 CONFIG_INTERVAL = os.path.join(THIS_DIR, 'config_interval.yml')

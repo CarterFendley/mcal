@@ -4,9 +4,9 @@ from typing import Optional
 
 import pytest
 
-from k_calibrate import files
-from k_calibrate.files import load_file, load_to_temp_file
-from k_calibrate.utils.logging import get_logger
+from mcal import files
+from mcal.files import load_file, load_to_temp_file
+from mcal.utils.logging import get_logger
 
 logger_name = files.__name__
 

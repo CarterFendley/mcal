@@ -6,7 +6,7 @@ import pydantic
 import pytest
 from test_resources.configs import *
 
-from k_calibrate.config import KCConfig, load_config_file
+from mcal.config import MCalConfig, load_config_file
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,7 @@ def test_bad_configs(path: str, error_type):
 )
 def test_good_config(path: str, args: dict):
     config = load_config_file(path, args)
-    assert isinstance(config, KCConfig)
+    assert isinstance(config, MCalConfig)
 
 def test_save_config(tmpdir: Path):
     input_config = load_config_file(COMPLETE_CONFIG, {})

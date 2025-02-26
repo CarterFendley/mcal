@@ -3,4 +3,4 @@ schedule:
 samplers:
   - kind: _DummySampler
 stop_criteria:
-  kind: 'k_calibrate:object_does_not_exist'
+  kind: 'mcal:object_does_not_exist'

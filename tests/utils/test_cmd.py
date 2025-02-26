@@ -1,7 +1,7 @@
 import pytest
 from test_resources.fixtures import ExecutableSpec
 
-from k_calibrate.utils.cmd import CommandException, is_cmd, run_cmd
+from mcal.utils.cmd import CommandException, is_cmd, run_cmd
 
 
 def test_is_cmd_false():
