@@ -16,7 +16,8 @@ class _DummySampler(Sampler):
         delay: Optional[float] = None,
         value: str = 'none',
         id_type: Optional[str] = None,
-        id_timeout: str = '1m'
+        id_timeout: str = '1m',
+        column_types: Optional[str] = None,
     ):
         self.samples = 0
         self.delay = delay
@@ -40,6 +41,14 @@ class _DummySampler(Sampler):
         else:
             raise NotImplementedError("Id type is not implemented: %s" % id_type)
 
+        if column_types is None:
+            self.column_types = None
+        elif column_types == 'sample_num':
+            assert value == 'sample_num', "Column type 'sample_num' should only be used when return values are set to the same type."
+            self.column_types = column_types
+        else:
+            raise NotImplementedError("Column type is not implemented: %s" % column_types)
+
         # Important that this is on the class
         self.__class__.ID_TIMEOUT = parse_timedelta(id_timeout)
 
@@ -48,7 +57,11 @@ class _DummySampler(Sampler):
             time.sleep(self.delay)
 
         value = self.value()
-        df = pd.DataFrame([{'dummy': value}])
+        if self.column_types is None:
+            df = pd.DataFrame([{'dummy': value}])
+        elif self.column_types == 'sample_num':
+            df = pd.DataFrame([{f'{value}': value}])
+
         if self.id is not None:
             df["id"] = self.id(value)
 

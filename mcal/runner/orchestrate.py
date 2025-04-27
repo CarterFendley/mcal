@@ -48,14 +48,6 @@ async def run(
 
             existing_data = run_data.collected_data[name]
             if existing_data is not None:
-                if not existing_data.raw_data.dtypes.equals(sample_data.raw_data.dtypes):
-                    logger.warning("Sample from '%s' rejected due to differing schema:\nOLD:\n%s\n\nNEW:\n%s" % (
-                        name,
-                        existing_data.raw_data.dtypes,
-                        sample_data.raw_data.dtypes
-                    ))
-                    continue
-
                 new_ids, returned_ids = existing_data.append(sample_data)
             else:
                 run_data.collected_data[name] = sample_data

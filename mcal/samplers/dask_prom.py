@@ -11,6 +11,7 @@ from prometheus_client.parser import text_string_to_metric_families
 
 from mcal import Sampler
 from mcal.utils.logging import LogDeduplicate
+from mcal.utils.prometheus import mapper_python_info, metrics_to_pd_series
 
 dedup = LogDeduplicate()
 
@@ -208,7 +209,7 @@ class DaskPromScheduler(Sampler):
 
         data = []
         for cluster in clusters:
-            cluster_info = {}
+            cluster_info = pd.Series()
             cluster_info['id'] = f"{cluster['namespace']}/{cluster['name']}"
             cluster_info['namespace'] = cluster['namespace']
             cluster_info['cluster_name'] = cluster['name']
@@ -229,39 +230,15 @@ class DaskPromScheduler(Sampler):
                 port=8787
             )
             if families is not None:
-                # https://distributed.dask.org/en/latest/prometheus.html
-                for family in families:
-                    # print(family.name)
-                    if family.name == "dask_scheduler_workers_added":
-                        sample = family.samples[0]
-                        assert sample.name == "dask_scheduler_workers_added_total"
-                        cluster_info['workers_added_total'] = sample.value
-                    if family.name == "dask_scheduler_workers_removed":
-                        sample = family.samples[0]
-                        assert sample.name == "dask_scheduler_workers_removed_total"
-                        cluster_info['workers_removed_total'] = sample.value
-                    if family.name == 'dask_scheduler_workers':
-                        worker_info = {}
-                        total = 0
-                        for sample in family.samples:
-                            state = sample.labels['state']
-                            worker_info[f'workers_{state}'] = sample.value
-                            total += sample.value
-
-                        # This is just to order 'workers_total' first
-                        cluster_info['workers_total'] = total
-                        cluster_info.update(worker_info)
-                    if family.name == 'dask_scheduler_tasks':
-                        task_info = {}
-                        total = 0
-                        for sample in family.samples:
-                            state = sample.labels['state']
-                            task_info[f'tasks_{state}'] = sample.value
-                            total += sample.value
-
-                        # This is just to order 'tasks_total' first
-                        cluster_info['tasks_total'] = total
-                        cluster_info.update(task_info)
+                cluster_info = pd.concat([
+                    cluster_info,
+                    metrics_to_pd_series(
+                        families,
+                        custom_maps={
+                            'python_info': mapper_python_info
+                        }
+                    )
+                ])
 
             data.append(cluster_info)
 
@@ -281,7 +258,7 @@ class DaskPromWorker(Sampler):
         data = []
         for cluster in clusters:
             for worker_pod in cluster['worker_pods']:
-                worker_info = {}
+                worker_info = pd.Series()
                 worker_info['id'] = f"{cluster['namespace']}/{cluster['name']}/{worker_pod}"
                 worker_info['namespace'] = cluster['namespace']
                 worker_info['cluster_name'] = cluster['name']
@@ -293,27 +270,15 @@ class DaskPromWorker(Sampler):
                     # write_rsp=True
                 )
                 if families is not None:
-                    for family in families:
-                        # print(family.name)
-                        if family.name == 'dask_worker_memory_bytes':
-                            memory_info = {}
-                            total = 0
-                            for sample in family.samples:
-                                label = sample.labels['type']
-                                memory_info[f'memory_{label}'] = sample.value
-                                total += sample.value
-
-                            # This is just to order 'tasks_total' first
-                            worker_info['memory_total'] = total
-                            worker_info.update(memory_info)
-                        if family.name == 'process_virtual_memory_bytes':
-                            worker_info['process_virtual_memory'] = (
-                                family.samples[0].value
-                            )
-                        if family.name == 'process_resident_memory_bytes':
-                            worker_info['process_resident_memory'] = (
-                                family.samples[0].value
-                            )
+                    worker_info = pd.concat([
+                    worker_info,
+                    metrics_to_pd_series(
+                        families,
+                        custom_maps={
+                            'python_info': mapper_python_info
+                        }
+                    )
+                ])
 
                 data.append(worker_info)
 

@@ -29,35 +29,54 @@ class _GenericWatcher(Watcher):
     formatters = {}
 
     def __init__(self):
-        self.data = {}
+        self.previous_schema = None
+        self.previous_data = {}
 
-    def _get_data(self, record: pd.Series):
+    def new_sample(self, kind, records: pd.DataFrame):
+        # If there is not previous schema, do not alert changes just update
+        if self.previous_schema is None:
+            self.previous_schema = records.dtypes
+
+        changes = []
+        for name, dtype in records.dtypes.items():
+            if name not in self.previous_schema:
+                changes.append(f"New attribute: '{name}'")
+                self.previous_schema[name] = dtype
+            elif self.previous_schema[name] != dtype:
+                changes.append(f"Dtype changes: {self.previous_schema[name]} --> {dtype}")
+                self.previous_schema[name] = dtype
+
+        if len(changes) != 0:
+            print("Schema updates for sampler: %s" % kind)
+            for c in changes:
+                print(f"  - {c}")
+
+    def _get_data(self, record: pd.Series) -> dict:
         data = {}
-        for attr in self.warn_changes:
-            if attr in record:
-                data[attr] = record[attr]
+        for attr, value in record.items():
+            data[attr] = value
 
         return data
 
-    def _get_changed(self, id: str, record: pd.Series):
+    def _get_changes(self, id: str, record: pd.Series):
         data = self._get_data(record)
-        for key, value in data.items():
-            # print(key, value)
-            if key not in self.data[id]:
-                print("NEW KEY __--------!")
-                yield key, None, value
-            elif self.data[id][key] != value:
-                yield key, self.data[id][key], value
 
-        self.data[id] = data
+        for key, value in data.items():
+            if key not in self.previous_data[id]:
+                yield key, None, value
+            elif self.previous_data[id][key] != value:
+                yield key, self.previous_data[id][key], value
+
+        self.previous_data[id] = data
 
     def id_found(self, kind, id: str, record: pd.Series):
-        print("New %s id found: %s" % (kind, id))
-        self.data[id] = self._get_data(record)
+        print("New %s id found: %s" % (kind.__name__, id))
+        self.previous_data[id] = self._get_data(record)
 
     def id_updates(self, kind, id: str, records: pd.DataFrame):
         for _, row in records.iterrows():
-            updates = list(self._get_changed(id, row))
+            updates = self._get_changes(id, row)
+            updates = list(filter(lambda u: u[0] in self.warn_changes, updates))
             if len(updates) != 0:
                 print("Updates for id: %s" % id)
                 for attr, old, new in updates:
@@ -71,8 +90,13 @@ class _GenericWatcher(Watcher):
                         pass
 
                     if format := self.formatters.get(attr):
-                        old = format(old)
-                        new = format(new)
+                        def safe_format(value):
+                            try:
+                                return format(value)
+                            except Exception as err:
+                                print(f"Warning: unable to format '{attr}' of value: {value}")
+                        old = safe_format(old)
+                        new = safe_format(new)
                     print(f"  {attr}: {old} {arrow} {new}")
 
 class DaskScheduler(_GenericWatcher):
@@ -81,9 +105,9 @@ class DaskScheduler(_GenericWatcher):
         self.subscribe(DaskPromScheduler)
 
         self.warn_changes = (
-            'workers_removed_total',
-            'tasks_erred',
-            'tasks_no-worker'
+            'dask_scheduler_workers_removed_total',
+            'dask_scheduler_tasks-state=erred',
+            'dask_scheduler_tasks-state=no-worker'
         )
 
 class DaskWorker(_GenericWatcher):
@@ -92,12 +116,11 @@ class DaskWorker(_GenericWatcher):
         self.subscribe(DaskPromWorker)
 
         self.warn_changes = (
-            'memory_total',
-            'memory_managed',
-            'memory_unmanaged',
-            'memory_spilled',
-            'process_virtual_memory',
-            'process_resident_memory',
+            'dask_worker_memory_bytes-type=managed',
+            'dask_worker_memory_bytes-type=unmanaged',
+            'dask_worker_memory_bytes-type=spilled',
+            'process_virtual_memory_bytes',
+            'process_resident_memory_bytes',
         )
         self.formatters = {}
         for attr in self.warn_changes:
