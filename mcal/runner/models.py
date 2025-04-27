@@ -8,8 +8,8 @@ from typing import Dict, Optional
 import pandas as pd
 
 from mcal.config import MCalConfig, load_config_file
+from mcal.samplers.base import SamplerData
 from mcal.utils.logging import get_logger
-from mcal.utils.pandas import load_dtypes, save_dtypes
 
 # NOTE: I think it is important that %Z is included to assure UTC
 DATE_FORMAT = "%Y-%m-%d_%H:%M:%S_%Z"
@@ -32,7 +32,7 @@ class RunStats:
 class CalibrationRun:
     start_time: datetime
     config: MCalConfig
-    collected_data: Dict[str, pd.DataFrame] = field(default_factory=lambda: {})
+    collected_data: Dict[str, SamplerData] = field(default_factory=lambda: {})
 
     def gen_name(self) -> str:
         return self.start_time.strftime(DATE_FORMAT)
@@ -59,14 +59,8 @@ class CalibrationRun:
         config_path = os.path.join(folder_path, "config.yml")
         self.config.save(config_path)
 
-        for sample_name, sample in self.collected_data.items():
-            if data_type == 'csv':
-                path = os.path.join(folder_path, sample_name + ".csv")
-                dtypes_path = os.path.join(folder_path, sample_name + '_dtypes.json')
-                sample.to_csv(path, header=True)
-                save_dtypes(dtypes_path, sample)
-            else:
-                raise NotImplementedError("Run saving not implemented for type: %s" % data_type)
+        for sample in self.collected_data.values():
+            sample.write(folder_path)
 
         return folder_path
 
@@ -87,22 +81,11 @@ def load_run(path: str) -> CalibrationRun:
             continue
 
         name, ext = os.path.splitext(file)
-
         if ext == ".json":
             # Used for saving CSV dtypes so just skipping here
             continue
         if ext == ".csv":
-            dtypes_path = os.path.join(path, name + "_dtypes.json")
-            if not os.path.isfile(dtypes_path):
-                logger.error("Found csv file '%s' but no accompanying dtypes file at path: %s" % (file, dtypes_path))
-                raise RuntimeError("Found CSV file but no dtypes file, is your data corrupted.")
-            dtypes_dict, parse_dates = load_dtypes(dtypes_path)
-            collected_data[name] = pd.read_csv(
-                file_path,
-                dtype=dtypes_dict,
-                parse_dates=parse_dates,
-                index_col=0 # Avoids 'Unnamed: 0' from showing up
-            )
+            collected_data[name] = SamplerData.load(file_path)
         else:
             raise NotImplementedError("Found unexpected type in save folder: %s" % ext)
 

@@ -1,2 +1,2 @@
-from .builtin import Watcher
-from .dask import DaskWatcher
+from .base import Watcher
+from .dummy import _DummyWatcher

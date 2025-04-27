@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from importlib.metadata import entry_points
-from itertools import compress
 from math import ceil
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Optional, Type
 
 import pandas as pd
 from timedelta import Timedelta
@@ -19,59 +16,6 @@ logger = get_logger(__name__)
 
 DETAILED_FORMAT = '%m/%d/%y %H:%M:%S.%f'
 
-class Sampler(ABC):
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def sample(self) -> Union[pd.Series, pd.DataFrame]:
-        pass
-
-_LOADED_SAMPLERS: Optional[Dict[str, Sampler]] = None
-
-def _load_samplers() -> Dict[str, Sampler]:
-    samplers = {}
-    eps = entry_points(group='mcal.samplers')
-    for ep in eps:
-        try:
-            entry_point_data = ep.load()
-        except IndexError:
-            logger.warning(f"Failed to load entrypoint: {ep}")
-            continue
-
-        # Preform assertions
-        if not isinstance(entry_point_data, list):
-            logger.warning(f"Entrypoint did not contain list: {ep}")
-            continue
-
-        not_samplers = map(lambda v: not issubclass(v, Sampler), entry_point_data)
-        not_samplers = tuple(compress(entry_point_data, not_samplers))
-        if len(not_samplers) != 0:
-            logger.warning(f"Found non-sampler types in entrypoint list: {not_samplers}")
-            continue
-
-        for sampler in entry_point_data:
-            name = sampler.__name__
-            if name in samplers:
-                logger.warning(f"Found duplicate name '{name}'. Overriding previous sampler with current version.")
-            samplers[name] = sampler
-
-    global _LOADED_SAMPLERS
-    _LOADED_SAMPLERS = samplers
-
-    return samplers
-
-def is_sampler(name: str, reload: bool = False) -> bool:
-    if _LOADED_SAMPLERS is None or reload:
-        _load_samplers()
-
-    return name in _LOADED_SAMPLERS
-
-def get_sampler(name: str, reload: bool = False) -> Optional[Type[Sampler]]:
-    if _LOADED_SAMPLERS is None or reload:
-        _load_samplers()
-
-    return _LOADED_SAMPLERS.get(name)
 
 class Schedule(ABC):
     @classmethod
@@ -207,5 +151,3 @@ def get_schedule(name: str) -> Optional[Type[Schedule]]:
 
 def is_schedule(name: str) -> bool:
     return get_schedule(name) != None
-
-# def run()

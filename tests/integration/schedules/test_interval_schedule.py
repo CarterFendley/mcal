@@ -31,8 +31,8 @@ def test_basic(cli_run: CLIRunFixture, interval: timedelta, amount: int):
     sample_data = data.collected_data
 
     # Should have 2 columns 5 rows
-    assert sample_data['_DummySampler'].shape == (amount, 2)
-    timestamp_deltas = sample_data['_DummySampler']['timestamp'].diff()
+    assert sample_data['_DummySampler'].data.shape == (amount, 2)
+    timestamp_deltas = sample_data['_DummySampler'].data['timestamp'].diff()
     timestamp_deltas = timestamp_deltas.iloc[1:] # Drop the first row since it will be NaT
 
     diff_from_interval = abs(timestamp_deltas - interval)

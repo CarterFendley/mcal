@@ -3,7 +3,7 @@ from io import StringIO
 import pandas as pd
 from kubernetes.utils import quantity
 
-from mcal.calibrate import Sampler
+from mcal import Sampler
 from mcal.utils.cmd import is_cmd, run_cmd
 
 

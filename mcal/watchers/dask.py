@@ -1,66 +1,104 @@
 import pandas as pd
+from colorama import Fore, Style, just_fix_windows_console
+
+from mcal.samplers.dask_k8_cluster import DaskK8Cluster
+from mcal.samplers.dask_prom import DaskPromScheduler, DaskPromWorker
+from mcal.utils.format import bytes_to_human_readable
 
 from . import Watcher
 
+just_fix_windows_console()
 
-class DaskWatcher(Watcher):
+class DaskCluster(Watcher):
     def __init__(self):
-        self.known_k8_clusters = {}
-        self.known_schedulers = {}
+        self.subscribe(DaskK8Cluster)
 
-    def _handle_k8_cluster(self, sample: pd.DataFrame):
-        for index, row in sample.iterrows():
-            cluster_id = (row['namespace'], row['name'], row['creation_timestamp'])
+    def id_found(self, kind, id: str, record: pd.Series):
+        print("New cluster: %s" % id)
+        for attr in ('creation_timestamp', 'worker_replicas'):
+            print(f'  {attr}: {record[attr]}')
 
-            if cluster_id not in self.known_k8_clusters:
-                print(f"Found new K8 cluster '{row['name']}' in namespace '{row['namespace']}'")
-                self.known_k8_clusters[cluster_id] = {}
+    def id_gone(self, kind, id: str):
+        print("Cluster gone: %s" % id)
 
-    def _handle_prom_scheduler(self, sample: pd.DataFrame):
-        for index, row in sample.iterrows():
-            scheduler_id = (
-                row['namespace'],
-                row['cluster_name'],
-                row['scheduler_name'],
-            )
+    def id_returned(self, kind, id: str, record):
+        print("Cluster returned: %s" % id)
 
-            if scheduler_id not in self.known_schedulers:
-                print(f"Found new scheduler '{row['scheduler_name']}' for cluster '{row['cluster_name']}'")
+class _GenericWatcher(Watcher):
+    warn_changes = ()
+    formatters = {}
 
-                keys = [
-                    'workers_total',
-                    'workers_partially_saturated',
-                    'workers_saturated',
-                    'tasks_total',
-                    # In progress
-                    'tasks_waiting',
-                    'tasks_queued',
-                    'tasks_processing',
-                    # Finished
-                    'tasks_memory',
-                    'tasks_released',
-                    'tasks_erred'
-                ]
-                self.known_schedulers[scheduler_id] = {
-                    k: row[k] for k in keys
-                }
-                for key, value in self.known_schedulers[scheduler_id].items():
-                    print(f"\t- {key}: {value}")
-            else:
-                diff = {}
-                for key, value in self.known_schedulers[scheduler_id].items():
-                    if value != row[key]:
-                        diff[key] = (value, row[key])
-                        self.known_schedulers[scheduler_id][key] = row[key]
-                if len(diff) != 0:
-                    print(f"Updates found for scheduler '{row['scheduler_name']}' for cluster '{row['cluster_name']}'")
-                    for key, (previous, current) in diff.items():
-                        print(f"\t- {key}: {previous} -->> {current}")
+    def __init__(self):
+        self.data = {}
 
+    def _get_data(self, record: pd.Series):
+        data = {}
+        for attr in self.warn_changes:
+            if attr in record:
+                data[attr] = record[attr]
 
-    def after_sample(self, name: str, sample: pd.DataFrame):
-        if name == 'DaskK8Cluster':
-            self._handle_k8_cluster(sample)
-        if name == 'DaskPromScheduler':
-            self._handle_prom_scheduler(sample)
+        return data
 
+    def _get_changed(self, id: str, record: pd.Series):
+        data = self._get_data(record)
+        for key, value in data.items():
+            # print(key, value)
+            if key not in self.data[id]:
+                print("NEW KEY __--------!")
+                yield key, None, value
+            elif self.data[id][key] != value:
+                yield key, self.data[id][key], value
+
+        self.data[id] = data
+
+    def id_found(self, kind, id: str, record: pd.Series):
+        print("New %s id found: %s" % (kind, id))
+        self.data[id] = self._get_data(record)
+
+    def id_updates(self, kind, id: str, records: pd.DataFrame):
+        for _, row in records.iterrows():
+            updates = list(self._get_changed(id, row))
+            if len(updates) != 0:
+                print("Updates for id: %s" % id)
+                for attr, old, new in updates:
+                    arrow = "==>"
+                    try:
+                        if new < old:
+                            arrow = f"{Fore.RED}{arrow}{Style.RESET_ALL}"
+                        else:
+                            arrow = f"{Fore.GREEN}{arrow}{Style.RESET_ALL}"
+                    except TypeError:
+                        pass
+
+                    if format := self.formatters.get(attr):
+                        old = format(old)
+                        new = format(new)
+                    print(f"  {attr}: {old} {arrow} {new}")
+
+class DaskScheduler(_GenericWatcher):
+    def __init__(self):
+        super().__init__()
+        self.subscribe(DaskPromScheduler)
+
+        self.warn_changes = (
+            'workers_removed_total',
+            'tasks_erred',
+            'tasks_no-worker'
+        )
+
+class DaskWorker(_GenericWatcher):
+    def __init__(self):
+        super().__init__()
+        self.subscribe(DaskPromWorker)
+
+        self.warn_changes = (
+            'memory_total',
+            'memory_managed',
+            'memory_unmanaged',
+            'memory_spilled',
+            'process_virtual_memory',
+            'process_resident_memory',
+        )
+        self.formatters = {}
+        for attr in self.warn_changes:
+            self.formatters[attr] = bytes_to_human_readable

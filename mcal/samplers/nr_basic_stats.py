@@ -1,8 +1,8 @@
 import pandas as pd
 
-from mcal.calibrate import Sample, Sampler
 from mcal.files import load_file
 from mcal.new_relic import client_from_env_file
+from mcal.schedules import Sample, Sampler
 
 SINCE = "1 hour ago"
 

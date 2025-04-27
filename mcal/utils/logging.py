@@ -1,5 +1,6 @@
 import logging
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import Callable, List, Optional
 
 FORMAT_STR_VERBOSE_INFO = '{ %(name)s:%(lineno)d @ %(asctime)s } -'
 
@@ -96,3 +97,27 @@ class CLIFormatter(logging.Formatter):
             self._style._fmt = self.default_format
 
         return super().format(record)
+
+logging.info
+
+class LogDeduplicate:
+    """Probably really inefficient duplicate log suppressor"""
+    def __init__(self,  timeout: timedelta = timedelta(minutes=30)):
+        self.logs = {}
+        self.timeout = timeout
+
+    def __call__(
+        self,
+        log_method: Callable,
+        msg: object,
+    ):
+        now = datetime.now() # TODO: Probably make UTC?
+        previous_log_time = self.logs.get(msg)
+        if previous_log_time is None:
+            log_method(msg)
+        elif (now - previous_log_time) > self.timeout:
+            log_method(msg)
+        else:
+            return
+
+        self.logs[msg] = now

@@ -1,6 +1,10 @@
 import logging
+import time
+from datetime import timedelta
 
-from mcal.utils.logging import get_logger, set_cli_level
+import pytest
+
+from mcal.utils.logging import LogDeduplicate, get_logger, set_cli_level
 
 
 def test_basic(caplog):
@@ -55,4 +59,34 @@ def test_cli_logging(caplog):
     assert caplog.record_tuples == [
         ('cli', logging.DEBUG, "CLI Debug"),
         ('code', logging.DEBUG, "Code Debug")
+    ]
+
+@pytest.mark.parametrize(
+    'timeout',
+    [timedelta(seconds=0.2), timedelta(seconds=0.3)]
+)
+def test_log_deduplicate(caplog, timeout: timedelta):
+    logger = get_logger('dedup')
+    deduplicate = LogDeduplicate(timeout=timeout)
+
+    logger.setLevel(logging.INFO)
+    deduplicate(logger.info, "Hi")
+    assert caplog.record_tuples == [
+        ('dedup', logging.INFO, "Hi")
+    ]
+
+    caplog.clear()
+    deduplicate(logger.info, "Hi")
+    deduplicate(logger.info, "Hi")
+    deduplicate(logger.info, "Hello World")
+    assert caplog.record_tuples == [
+        ('dedup', logging.INFO, "Hello World")
+    ]
+
+    time.sleep(timeout.total_seconds())
+
+    caplog.clear()
+    deduplicate(logger.info, "Hi")
+    assert caplog.record_tuples == [
+        ('dedup', logging.INFO, "Hi")
     ]

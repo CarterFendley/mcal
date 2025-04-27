@@ -5,12 +5,9 @@ from typing import Optional
 import click
 import pandas as pd
 
-from mcal.calibrate import (
-    _load_samplers,
-    get_sampler,
-)
 from mcal.config import load_config_file
 from mcal.runner import orchestrate
+from mcal.samplers.base import _load_samplers, get_sampler
 from mcal.utils.logging import get_logger, set_cli_level
 
 from .dev import dev

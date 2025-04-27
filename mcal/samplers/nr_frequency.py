@@ -1,7 +1,7 @@
 import pandas as pd
 
-from mcal.calibrate import Sample, Sampler
 from mcal.new_relic import client_from_env_file
+from mcal.schedules import Sample, Sampler
 from mcal.utils.nr import timestamp_to_datetime
 
 SINCE = "1 hour ago"

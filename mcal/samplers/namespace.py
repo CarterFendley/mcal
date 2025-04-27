@@ -1,5 +1,5 @@
-from mcal.calibrate import Sample, Sampler
 from mcal.new_relic import NewRelicClient
+from mcal.schedules import Sample, Sampler
 
 SINCE = "1 hour ago"
 

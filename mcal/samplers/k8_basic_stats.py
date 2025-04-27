@@ -1,6 +1,6 @@
 from kubernetes import client, config
 
-from mcal.calibrate import Sample, Sampler
+from mcal.schedules import Sample, Sampler
 
 
 class K8BasicStats(Sampler):

@@ -22,7 +22,9 @@ dependencies = [
     "toml",
     "timedelta", # Built in timedelta sucks
     "pandas",
-    "gql[all]"
+    "colorama",
+    # New relic
+    "gql[all]",
 ]
 
 [project.urls]
@@ -36,7 +38,7 @@ mcal = ["files/**"]
 
 
 [project.entry-points."mcal.samplers"]
-samplers = "mcal.samplers:SAMPLERS"
+samplers = "mcal.samplers.samplers_list:SAMPLERS"
 
 [project.scripts]
 mcal = "mcal.cli.main:mcal"

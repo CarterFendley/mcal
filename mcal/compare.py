@@ -16,12 +16,16 @@ class Compare:
         self.run = run
         self.iterate_by = iterate_by
 
+        self.unpacked_data = {}
+        for key, sample_data in self.run.collected_data.items():
+            self.unpacked_data[key] = sample_data.data
+
     def yield_data(self) -> Iterable[Dict[str, pd.DataFrame]]:
         if self.iterate_by is None:
-            yield self.run.collected_data
+            yield self.unpacked_data
         else:
             already_yielded = pd.DataFrame(columns=self.iterate_by)
-            for dataset in self.run.collected_data.values():
+            for dataset in self.unpacked_data.values():
                 uniques = dataset[self.iterate_by].drop_duplicates()
                 new = (
                     uniques.merge(already_yielded, how='outer', indicator=True)
@@ -33,7 +37,7 @@ class Compare:
                     row_df = row.to_frame().T
                     to_yield = {}
                     # NOTE: Overriding 'dataset' here, don't need outer loop value anymore
-                    for dataset_name, dataset in self.run.collected_data.items():
+                    for dataset_name, dataset in self.unpacked_data.items():
                         to_yield[dataset_name] = dataset.merge(
                             row_df,
                             how='inner',

@@ -1,15 +1,16 @@
 schedule:
   kind: IntervalSchedule
   args:
-    interval: 0.1s
+    interval: {{interval}}
 samplers:
   - kind: _DummySampler
     args:
-      value: sample_num
-      id_type: sample_num
+      value: {{value_type}}
+      id_type: odd_even
+      id_timeout: {{timeout}}
 watchers:
   - kind: builtin:_DummyWatcher
 stop_criteria:
   kind: 'builtin:after_iterations'
   args:
-    amount: 5
+    amount: {{amount}}

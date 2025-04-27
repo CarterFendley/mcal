@@ -1,10 +1,12 @@
 import os
 import time
+from datetime import timedelta
 from typing import Optional
 
 import pandas as pd
 
-from mcal.calibrate import Sampler
+from mcal import Sampler
+from mcal.utils.time import parse_timedelta
 
 
 class _DummySampler(Sampler):
@@ -13,7 +15,8 @@ class _DummySampler(Sampler):
         self,
         delay: Optional[float] = None,
         value: str = 'none',
-        error_at: Optional[int] = None,
+        id_type: Optional[str] = None,
+        id_timeout: str = '1m'
     ):
         self.samples = 0
         self.delay = delay
@@ -22,14 +25,33 @@ class _DummySampler(Sampler):
             self.value = lambda: None
         elif value == 'sample_num':
             self.value = lambda: self.samples
+        elif value == 'numbers_repeated':
+            # Repeats the number 2 times
+            self.value = lambda: self.samples // 2
         else:
             raise NotImplementedError("Return type is not implemented: %s" % self.value)
+
+        if id_type is None:
+            self.id = None
+        elif id_type == 'sample_num':
+            self.id = lambda value: self.samples
+        elif id_type == 'odd_even':
+            self.id = lambda value: 'even' if value % 2 == 0 else 'odd'
+        else:
+            raise NotImplementedError("Id type is not implemented: %s" % id_type)
+
+        # Important that this is on the class
+        self.__class__.ID_TIMEOUT = parse_timedelta(id_timeout)
 
     def sample(self) -> pd.DataFrame:
         if self.delay is not None:
             time.sleep(self.delay)
 
-        df = pd.DataFrame([{'dummy': self.value()}])
+        value = self.value()
+        df = pd.DataFrame([{'dummy': value}])
+        if self.id is not None:
+            df["id"] = self.id(value)
+
         self.samples += 1
         return df
 

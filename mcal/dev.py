@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import os
+import subprocess
+import time
 from abc import ABC, abstractmethod
 from typing import List, Optional, Set
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
@@ -281,3 +284,90 @@ APPLIES = {
     'NRI': NRI,
     'DaskOperator': DaskOperator,
 }
+
+class DummyMount:
+    """Context manager for creating and managing a dummy pod with PVC."""
+    
+    def __init__(self, pvc_name: str, namespace: str = None):
+        self.pvc_name = pvc_name
+        self.pod_name = f"dummy-pod-{uuid4()}"
+        self.namespace = namespace
+        self._entered = False
+        # Load and render the dummy pod manifest with the PVC name
+        self._tmp_file = load_to_temp_file(
+            'k8/manifest-dummy-pod.yml',
+            arguments={
+                'volume_name': self.pvc_name,
+                'pod_name': self.pod_name,
+                'namespace': self.namespace
+            }
+        )
+
+    def _with_namespace(self, cmd: list) -> list:
+        """Add namespace flag to command if namespace is specified."""
+        if self.namespace:
+            cmd.extend(['-n', self.namespace])
+        return cmd
+
+    def _namespace_info(self) -> str:
+        """Get namespace info string for logging."""
+        return f" in namespace {self.namespace}" if self.namespace else ""
+
+    def _wait_for_pod_ready(self, timeout: int = 60) -> bool:
+        """Wait for pod to be ready, with timeout."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            cmd = self._with_namespace(['kubectl', 'get', 'pod', '--ignore-not-found', self.pod_name, '-o', 'jsonpath="{.status.phase}"'])
+            result = run_cmd(
+                args=cmd,
+                stdout=subprocess.PIPE
+            )
+            if result.stdout.decode().strip() == '"Running"':
+                return True
+            time.sleep(1)
+        return False
+
+    def __enter__(self) -> DummyMount:
+        """Create the dummy pod and wait for it to be ready."""
+        if self._entered:
+            raise RuntimeError("DummyMount context manager cannot be entered twice")
+        self._entered = True
+
+        # Apply the manifest
+        try:
+            run_cmd(
+                args=['kubectl', 'apply', '-f', self._tmp_file.name],
+                stdout=subprocess.PIPE
+            )
+        except:
+            logger.error("Failed to apply manifest:")
+            logger.error("---")
+            with open(self._tmp_file.name) as f:
+                for line in f:
+                    logger.error(line.rstrip())
+            logger.error("---")
+            raise
+
+        logger.info(f"Creating dummy pod {self.pod_name}{self._namespace_info()} with PVC {self.pvc_name}...")
+
+        # Wait for pod to be ready
+        if not self._wait_for_pod_ready():
+            self.__exit__(None, None, None)  # Cleanup on failure
+            raise RuntimeError(f"Pod {self.pod_name} failed to start within timeout")
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Clean up the dummy pod."""
+        try:
+            cmd = self._with_namespace(['kubectl', 'delete', 'pod', self.pod_name, '--ignore-not-found'])
+            run_cmd(
+                args=cmd,
+                stdout=subprocess.PIPE
+            )
+            logger.info(f"Deleted dummy pod {self.pod_name}{self._namespace_info()}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to delete pod {self.pod_name}: {e}")
+        finally:
+            if self._tmp_file:
+                self._tmp_file.close()

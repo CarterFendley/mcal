@@ -1,7 +1,7 @@
 import pandas as pd
 from kubernetes import client, config
 
-from mcal.calibrate import Sampler
+from mcal import Sampler
 
 
 class DaskK8Cluster(Sampler):
@@ -56,6 +56,7 @@ class DaskK8Cluster(Sampler):
             metadata = item['metadata']
             namespace = metadata['namespace']
             name = metadata['name']
+            cluster_info['id'] = f"{namespace}/{name}"
             cluster_info['namespace'] = namespace 
             cluster_info['name'] = name
             cluster_info['kind'] = 'dask-operator'

@@ -1,0 +1,20 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 0.20s
+samplers:
+  - kind: _DummySampler
+    args:
+      value: sample_num
+      id_type: odd_even
+      id_timeout: 0.15s # Shorter than the interval to test id-returned
+watchers:
+  - kind: builtin:_DummyWatcher
+    args:
+      delays:
+        id-found: {{delay}}
+        id-returned: {{delay}}
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 3

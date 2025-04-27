@@ -5,11 +5,11 @@ from datetime import datetime, timedelta
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
-import mcal.calibrate
-from mcal.calibrate import DETAILED_FORMAT, ReferencedIntervalSchedule
+import mcal.schedules
+from mcal.schedules import DETAILED_FORMAT, ReferencedIntervalSchedule
 from mcal.utils.time import utc_now
 
-logger_name = mcal.calibrate.__name__
+logger_name = mcal.schedules.__name__
 
 def assert_within(
     t1: datetime,

@@ -1,0 +1,18 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 5s
+samplers:
+  - kind: DaskK8Cluster
+  - kind: DaskPromScheduler
+  - kind: DaskPromWorker
+# actions:
+  # - kind: mcal.actions.db_benchmark:DBBenchmark
+watchers:
+  - kind: mcal.watchers.dask:DaskCluster
+  - kind: mcal.watchers.dask:DaskScheduler
+  - kind: mcal.watchers.dask:DaskWorker
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 100

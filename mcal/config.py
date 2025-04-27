@@ -10,13 +10,12 @@ import oyaml as yaml
 from jinja2 import BaseLoader, Environment
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mcal import Sampler
 from mcal.actions import Action
-from mcal.calibrate import (
-    Sampler,
+from mcal.samplers import get_sampler, is_sampler
+from mcal.schedules import (
     Schedule,
-    get_sampler,
     get_schedule,
-    is_sampler,
     is_schedule,
 )
 from mcal.utils.logging import get_logger
@@ -100,7 +99,7 @@ class WatcherConfig(ObjectAsKind):
     @model_validator(mode='after')
     def check_object_as_kind(self) -> WatcherConfig:
         # Validate watcher
-        self.create_object('mcal.watchers.builtin', always_construct=True)
+        self.create_object('mcal.watchers', always_construct=True)
 
         if not isinstance(self._object, Watcher):
             raise ValueError("Object specified by '%s' is not a watcher: %s - %s" % (self.kind, type(self._object), self._object))
@@ -185,6 +184,7 @@ class MCalConfig(BaseModel):
                 sampler = sampler_cls(
                     **sampler_config.args
                 )
+                sampler.config = sampler_config
                 samplers[sampler_config.get_name()] = sampler
             except Exception as err:
                 logger.error("Failed to construct sampler '%s' with arguments: %s" % (sampler_config.kind, sampler_config.args))

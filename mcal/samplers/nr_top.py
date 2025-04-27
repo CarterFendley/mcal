@@ -1,6 +1,6 @@
 import pandas as pd
 
-from mcal.calibrate import Sampler
+from mcal import Sampler
 from mcal.files import load_file
 from mcal.new_relic import client_from_env_file
 from mcal.utils.nr import timestamp_to_datetime

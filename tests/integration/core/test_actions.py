@@ -18,7 +18,7 @@ def test_one_file_creator(cli_run: CLIRunFixture, tmpdir: Path):
         }
     )
 
-    count_data = data.collected_data['_DummyFileCount']
+    count_data = data.collected_data['_DummyFileCount'].data
     assert count_data['file_count'].equals(pd.Series([0, 1, 2, 3]))
 
 def test_two_file_creators(cli_run: CLIRunFixture, tmpdir: Path):
@@ -31,5 +31,5 @@ def test_two_file_creators(cli_run: CLIRunFixture, tmpdir: Path):
         }
     )
 
-    count_data = data.collected_data['_DummyFileCount']
+    count_data = data.collected_data['_DummyFileCount'].data
     assert count_data['file_count'].equals(pd.Series([0, 2, 4, 6]))

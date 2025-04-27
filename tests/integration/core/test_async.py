@@ -31,8 +31,8 @@ def test_sampler_delay(cli_run: CLIRunFixture, delay: float):
 
     assert data is not None
 
-    dummy_one = data.collected_data['dummy_one']
-    dummy_two = data.collected_data['dummy_two']
+    dummy_one = data.collected_data['dummy_one'].data
+    dummy_two = data.collected_data['dummy_two'].data
     assert dummy_one.shape == (1, 2)
     assert dummy_two.shape == (1, 2)
 
@@ -61,7 +61,7 @@ def test_action_delay(cli_run: CLIRunFixture, delay: float):
         }
     )
 
-    timestamps = data.collected_data['_DummySampler']['timestamp']
+    timestamps = data.collected_data['_DummySampler'].data['timestamp']
 
     # Check that we have approximately one delayed interval, not two sequential ones
     assert abs(timestamps.diff()[1] - timedelta(seconds=delay)) < timedelta(seconds=0.2)
@@ -86,7 +86,7 @@ def test_action_no_await(cli_run: CLIRunFixture, delay: float):
             'amount': '2'
         }
     )
-    timestamps = data.collected_data['_DummySampler']['timestamp']
+    timestamps = data.collected_data['_DummySampler'].data['timestamp']
 
     # Check that the delay does not show up, as the runner should not await it
     assert abs(timestamps.diff()[1]) < timedelta(seconds=0.2)
