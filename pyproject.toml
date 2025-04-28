@@ -4,7 +4,7 @@ description='A multi-purpose calibration tool.'
 authors=[
     { name = 'Carter Fendley' }
 ]
-version='0.0.2'
+version='0.0.3'
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers=[
