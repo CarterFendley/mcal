@@ -34,7 +34,7 @@ Homepage = "https://github.com/CarterFendley/mcal"
 include = ["mcal*"]
 
 [tool.setuptools.package-data]
-mcal = ["files/**"]
+mcal = ["files/**", "dashboard/preset/**"]
 
 
 [project.entry-points."mcal.samplers"]
@@ -51,6 +51,10 @@ dev = [
     "pytest-cov",
     "pytest-benchmark",
     "pytest-unordered"
+]
+dashboard = [
+    "dash",
+    "dash-bootstrap-components"
 ]
 dask = [
     "dask",

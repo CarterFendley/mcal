@@ -1,0 +1,13 @@
+schedule:
+  kind: IntervalSchedule
+  args:
+    interval: 0.2s
+samplers:
+  - kind: _DummySampler
+    args:
+      value: sample_num
+      column_types: sample_num
+stop_criteria:
+  kind: 'builtin:after_iterations'
+  args:
+    amount: 3

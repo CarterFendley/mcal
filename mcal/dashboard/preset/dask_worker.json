@@ -1,0 +1,108 @@
+[
+    {
+        "title": "Worker State",
+        "sampler_name": "DaskPromScheduler",
+        "attributes": [
+            [
+                "dask_scheduler_workers-state=idle",
+                null
+            ],
+            [
+                "dask_scheduler_workers-state=partially_saturated",
+                null
+            ],
+            [
+                "dask_scheduler_workers-state=saturated",
+                null
+            ],
+            [
+                "dask_scheduler_workers-state=paused",
+                null
+            ],
+            [
+                "dask_scheduler_workers-state=retiring",
+                null
+            ]
+        ]
+    },
+    {
+        "title": "Removed Workers",
+        "sampler_name": "DaskPromScheduler",
+        "attributes": [
+            [
+                "dask_scheduler_workers_removed",
+                null
+            ]
+        ]
+    },
+    {
+        "title": "Maybe spill bytes?",
+        "sampler_name": "DaskPromWorker",
+        "attributes": [
+            [
+                "dask_worker_spill_bytes-activity=memory-read",
+                null
+            ]
+        ]
+    },
+    {
+        "title": "Managed and Unmanaged Memory",
+        "sampler_name": "DaskPromWorker",
+        "attributes": [
+            [
+                "dask_worker_memory_bytes-type=managed",
+                "bytes"
+            ],
+            [
+                "dask_worker_memory_bytes-type=unmanaged",
+                "bytes"
+            ],
+            [
+                "dask_worker_tasks-state=executing",
+                null
+            ]
+        ]
+    },
+    {
+        "title": "Resident Memory",
+        "sampler_name": "DaskPromWorker",
+        "attributes": [
+            [
+                "process_resident_memory_bytes",
+                "bytes"
+            ],
+            [
+                "dask_worker_tasks-state=executing",
+                null
+            ]
+        ]
+    },
+    {
+        "title": "GC seconds",
+        "sampler_name": "DaskPromWorker",
+        "attributes": [
+            [
+                "dask_worker_gc_collection_seconds",
+                null
+            ]
+        ]
+    },
+    {
+        "title": "Incoming / Outgoing Bytes",
+        "sampler_name": "DaskPromWorker",
+        "attributes": [
+            [
+                "dask_worker_transfer_incoming_bytes",
+                "bytes"
+            ],
+            [
+                "dask_worker_transfer_outgoing_bytes",
+                "bytes"
+            ],
+            [
+                "dask_worker_tasks-state=executing",
+                null
+            ]
+        ]
+    }
+]
