@@ -21,7 +21,7 @@ def pytest_addoption(parser):
     )
 
 def pytest_configure(config):
-    def _add_markexpr(markexpr: str, join_op: str = "or"):
+    def _add_markexpr(markexpr: str, join_op: str = "and"):
         if config.option.markexpr == '':
             config.option.markexpr += f"({markexpr})"
         else:
