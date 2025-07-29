@@ -12,9 +12,27 @@ def pytest_addoption(parser):
         help="Enable slow tests"
     )
 
+    parser.addoption(
+        "--k8",
+        action='store_true',
+        dest="k8",
+        default=False,
+        help="Enable k8 tests"
+    )
+
 def pytest_configure(config):
-    # TODO: Am I removing the ability to add other markers via CLI here?
+    def _add_markexpr(markexpr: str, join_op: str = "or"):
+        if config.option.markexpr == '':
+            config.option.markexpr += f"({markexpr})"
+        else:
+            config.option.markexpr += f" {join_op} ({markexpr})"
+
     if config.option.slow:
-        config.option.markexpr = "not slow or slow"
+        _add_markexpr("not slow or slow")
     else:
-        config.option.markexpr = "not slow"
+        _add_markexpr("not slow")
+
+    if config.option.k8:
+        _add_markexpr("not k8 or k8")
+    else:
+        _add_markexpr("not k8")
